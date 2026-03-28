@@ -137,6 +137,32 @@ model Setting {
   value String
 }
 
+// מועדון לקוחות
+model ClubMember {
+  id        Int      @id @default(autoincrement())
+  name      String
+  phone     String   @unique
+  email     String?
+  birthday  String?  // "DD/MM" format
+  notes     String?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+// הודעות מערכת (מוצגות בדף הפתיחה)
+// type: INFO | PROMO | ALERT
+model SystemMessage {
+  id        Int      @id @default(autoincrement())
+  title     String
+  content   String
+  type      String   @default("INFO")
+  emoji     String   @default("📢")
+  isActive  Boolean  @default(true)
+  expiresAt DateTime?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
 // עובדים
 // role: CHEF | KITCHEN | DELIVERY | OTHER
 // status: ACTIVE | INACTIVE
