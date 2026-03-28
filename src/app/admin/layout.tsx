@@ -3,7 +3,7 @@
 import { useState, useEffect } from 'react'
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
-import { LayoutDashboard, Package, UtensilsCrossed, ClipboardList, Settings, Menu, X, LogOut, TrendingUp, ShoppingCart, Users, CalendarDays } from 'lucide-react'
+import { LayoutDashboard, Package, UtensilsCrossed, ClipboardList, Settings, Menu, X, LogOut, TrendingUp, ShoppingCart, Users, CalendarDays, Truck } from 'lucide-react'
 
 const NAV_ITEMS = [
   { href: '/admin', label: 'לוח בקרה', icon: LayoutDashboard, exact: true },
@@ -11,6 +11,7 @@ const NAV_ITEMS = [
   { href: '/admin/inventory', label: 'מלאי', icon: Package },
   { href: '/admin/menu', label: 'תפריט', icon: UtensilsCrossed },
   { href: '/admin/shopping-list', label: 'רשימת קניות', icon: ShoppingCart },
+  { href: '/admin/suppliers', label: 'ספקים', icon: Truck },
   { href: '/admin/employees', label: 'עובדים', icon: Users },
   { href: '/admin/shifts', label: 'משמרות', icon: CalendarDays },
   { href: '/admin/finance', label: 'כספים', icon: TrendingUp },
