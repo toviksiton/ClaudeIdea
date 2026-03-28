@@ -2,6 +2,8 @@ import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
 import { deductInventoryForOrder, getMenuItemMaxQuantity } from '@/lib/inventory'
 
+export const dynamic = 'force-dynamic'
+
 export async function GET(req: NextRequest) {
   try {
     const { searchParams } = new URL(req.url)
@@ -19,7 +21,9 @@ export async function GET(req: NextRequest) {
       take: limit,
     })
 
-    return NextResponse.json(orders)
+    return NextResponse.json(orders, {
+      headers: { 'Cache-Control': 'no-store, no-cache, must-revalidate' },
+    })
   } catch (error) {
     return NextResponse.json({ error: 'שגיאה בטעינת הזמנות' }, { status: 500 })
   }

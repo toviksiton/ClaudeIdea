@@ -50,7 +50,7 @@ export default function CustomerPage() {
 
   const fetchMenu = useCallback(async () => {
     try {
-      const res = await fetch('/api/menu')
+      const res = await fetch('/api/menu', { cache: 'no-store' })
       const data = await res.json()
       if (Array.isArray(data)) {
         setMenuItems(data)
@@ -60,15 +60,23 @@ export default function CustomerPage() {
     } catch {}
   }, [])
 
+  const fetchSettings = useCallback(async () => {
+    try {
+      const res = await fetch('/api/settings', { cache: 'no-store' })
+      const data = await res.json()
+      setSettings((prev) => ({ ...prev, ...data }))
+    } catch {}
+  }, [])
+
   useEffect(() => {
     fetchMenu()
-    fetch('/api/settings').then((r) => r.json()).then(setSettings).catch(() => {})
+    fetchSettings()
     setLoading(false)
-    const interval = setInterval(fetchMenu, 15000)
-    const onVisible = () => { if (document.visibilityState === 'visible') fetchMenu() }
+    const interval = setInterval(() => { fetchMenu(); fetchSettings() }, 15000)
+    const onVisible = () => { if (document.visibilityState === 'visible') { fetchMenu(); fetchSettings() } }
     document.addEventListener('visibilitychange', onVisible)
     return () => { clearInterval(interval); document.removeEventListener('visibilitychange', onVisible) }
-  }, [fetchMenu])
+  }, [fetchMenu, fetchSettings])
 
   const totalItems = cart.reduce((s, c) => s + c.quantity, 0)
   const totalPrice = cart.reduce((s, c) => s + c.menuItem.price * c.quantity, 0)
@@ -139,7 +147,13 @@ export default function CustomerPage() {
     return (
       <div className="min-h-screen bg-zinc-950 flex items-center justify-center p-6">
         <div className="text-center">
-          <div className="w-20 h-20 bg-zinc-800 rounded-3xl flex items-center justify-center mx-auto mb-6 text-4xl">🍽️</div>
+          <div className="w-20 h-20 bg-zinc-800 rounded-3xl flex items-center justify-center mx-auto mb-6 overflow-hidden">
+            {settings.logo_url ? (
+              <img src={settings.logo_url} alt="לוגו" className="w-full h-full object-contain p-1" />
+            ) : (
+              <span className="text-4xl">🍽️</span>
+            )}
+          </div>
           <h1 className="text-3xl font-bold text-white mb-2">{settings.business_name || 'מטבח הכפר'}</h1>
           <p className="text-zinc-400">האירוע אינו פעיל כרגע. נשוב בקרוב!</p>
         </div>
@@ -158,9 +172,16 @@ export default function CustomerPage() {
         <div className="absolute inset-0 opacity-5" style={{ backgroundImage: 'radial-gradient(circle at 20% 50%, #f97316 0%, transparent 60%), radial-gradient(circle at 80% 20%, #fb923c 0%, transparent 50%)' }} />
         <div className="relative">
           <div className="flex items-center justify-between mb-6">
-            <div>
-              <p className="text-zinc-400 text-sm mb-0.5">ברוך הבא אל</p>
-              <h1 className="text-2xl font-bold text-white">{settings.business_name || 'מטבח הכפר'}</h1>
+            <div className="flex items-center gap-3">
+              {settings.logo_url ? (
+                <div className="w-12 h-12 rounded-2xl overflow-hidden bg-zinc-800 shrink-0">
+                  <img src={settings.logo_url} alt="לוגו" className="w-full h-full object-contain p-1" />
+                </div>
+              ) : null}
+              <div>
+                <p className="text-zinc-400 text-sm mb-0.5">ברוך הבא אל</p>
+                <h1 className="text-2xl font-bold text-white">{settings.business_name || 'מטבח הכפר'}</h1>
+              </div>
             </div>
             {settings.business_phone && (
               <a href={`tel:${settings.business_phone}`} className="w-10 h-10 bg-zinc-800 rounded-2xl flex items-center justify-center text-zinc-300 hover:text-orange-400 transition-colors">

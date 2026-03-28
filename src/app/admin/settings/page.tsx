@@ -1,7 +1,7 @@
 'use client'
 
-import { useEffect, useState } from 'react'
-import { Save, RefreshCw } from 'lucide-react'
+import { useEffect, useState, useRef } from 'react'
+import { Save, Upload, X } from 'lucide-react'
 
 export default function SettingsPage() {
   const [settings, setSettings] = useState({
@@ -11,7 +11,9 @@ export default function SettingsPage() {
     bit_phone: '',
     admin_password: '',
     event_active: 'true',
+    logo_url: '',
   })
+  const fileRef = useRef<HTMLInputElement>(null)
   const [loading, setLoading] = useState(true)
   const [saving, setSaving] = useState(false)
   const [msg, setMsg] = useState('')
@@ -50,6 +52,57 @@ export default function SettingsPage() {
       )}
 
       <div className="bg-white rounded-2xl shadow-sm border p-6 max-w-lg space-y-5">
+
+        {/* Logo */}
+        <div>
+          <label className="block text-sm font-medium text-gray-700 mb-2">לוגו העסק</label>
+          <div className="flex items-start gap-3">
+            <div className="w-20 h-20 rounded-2xl border-2 border-dashed border-gray-200 flex items-center justify-center bg-gray-50 overflow-hidden shrink-0">
+              {settings.logo_url ? (
+                <img src={settings.logo_url} alt="לוגו" className="w-full h-full object-contain p-1" />
+              ) : (
+                <span className="text-3xl">🍽️</span>
+              )}
+            </div>
+            <div className="flex-1 space-y-2">
+              <button
+                type="button"
+                onClick={() => fileRef.current?.click()}
+                className="flex items-center gap-2 text-sm bg-orange-50 hover:bg-orange-100 text-orange-600 border border-orange-200 px-3 py-2 rounded-xl font-medium"
+              >
+                <Upload size={14} /> העלה תמונה
+              </button>
+              <input
+                ref={fileRef}
+                type="file"
+                accept="image/*"
+                className="hidden"
+                onChange={(e) => {
+                  const file = e.target.files?.[0]
+                  if (!file) return
+                  if (file.size > 500 * 1024) { alert('הקובץ גדול מדי (מקסימום 500KB). אנא דחוס את התמונה.'); return }
+                  const reader = new FileReader()
+                  reader.onload = (ev) => {
+                    setSettings((s) => ({ ...s, logo_url: ev.target?.result as string }))
+                  }
+                  reader.readAsDataURL(file)
+                }}
+              />
+              <input
+                value={settings.logo_url.startsWith('data:') ? '' : settings.logo_url}
+                onChange={(e) => setSettings({ ...settings, logo_url: e.target.value })}
+                placeholder="או הדבק קישור לתמונה (URL)"
+                className="w-full border border-gray-200 rounded-xl px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-orange-300"
+              />
+              {settings.logo_url && (
+                <button onClick={() => setSettings({ ...settings, logo_url: '' })} className="flex items-center gap-1 text-xs text-red-400 hover:text-red-600">
+                  <X size={12} /> הסר לוגו
+                </button>
+              )}
+            </div>
+          </div>
+        </div>
+
         <div>
           <label className="block text-sm font-medium text-gray-700 mb-1">שם העסק</label>
           <input

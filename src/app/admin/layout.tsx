@@ -23,10 +23,16 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
   const [authed, setAuthed] = useState(false)
   const [password, setPassword] = useState('')
   const [error, setError] = useState('')
+  const [logoUrl, setLogoUrl] = useState('')
+  const [businessName, setBusinessName] = useState('')
 
   useEffect(() => {
     const stored = sessionStorage.getItem('admin_authed')
     if (stored === 'true') setAuthed(true)
+    fetch('/api/settings', { cache: 'no-store' })
+      .then((r) => r.json())
+      .then((s) => { setLogoUrl(s.logo_url || ''); setBusinessName(s.business_name || '') })
+      .catch(() => {})
   }, [])
 
   function login() {
@@ -83,9 +89,16 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
     <div className="min-h-screen bg-gray-100 flex" dir="rtl">
       {/* Sidebar Desktop */}
       <aside className="hidden md:flex w-60 bg-gray-900 text-white flex-col fixed h-full">
-        <div className="p-5 border-b border-gray-700">
-          <h1 className="font-bold text-xl text-orange-400">מטבח הכפר</h1>
-          <p className="text-gray-400 text-xs mt-0.5">פאנל ניהול</p>
+        <div className="p-5 border-b border-gray-700 flex items-center gap-3">
+          {logoUrl && (
+            <div className="w-9 h-9 rounded-xl overflow-hidden bg-zinc-700 shrink-0">
+              <img src={logoUrl} alt="לוגו" className="w-full h-full object-contain p-0.5" />
+            </div>
+          )}
+          <div>
+            <h1 className="font-bold text-lg text-orange-400 leading-tight">{businessName || 'מטבח הכפר'}</h1>
+            <p className="text-gray-400 text-xs">פאנל ניהול</p>
+          </div>
         </div>
         <nav className="flex-1 p-3 space-y-1">
           {NAV_ITEMS.map((item) => {

@@ -47,6 +47,8 @@ export default function KitchenPage() {
   const [soundEnabled, setSoundEnabled] = useState(true)
   const [lastRefresh, setLastRefresh] = useState(new Date())
   const [updating, setUpdating] = useState<number | null>(null)
+  const [logoUrl, setLogoUrl] = useState('')
+  const [businessName, setBusinessName] = useState('')
   const audioCtxRef = useRef<AudioContext | null>(null)
   const isFirstLoad = useRef(true)
 
@@ -107,6 +109,10 @@ export default function KitchenPage() {
 
   useEffect(() => {
     load()
+    fetch('/api/settings', { cache: 'no-store' })
+      .then((r) => r.json())
+      .then((s) => { setLogoUrl(s.logo_url || ''); setBusinessName(s.business_name || '') })
+      .catch(() => {})
     const interval = setInterval(() => load(true), 8000)
     return () => clearInterval(interval)
   }, [soundEnabled])
@@ -141,7 +147,12 @@ export default function KitchenPage() {
       <header className="bg-gray-800 border-b border-gray-700 px-4 py-3 sticky top-0 z-30">
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-3">
-            <h1 className="text-xl font-bold text-orange-400">מסך מטבח</h1>
+            {logoUrl && (
+              <div className="w-8 h-8 rounded-xl overflow-hidden bg-gray-700 shrink-0">
+                <img src={logoUrl} alt="לוגו" className="w-full h-full object-contain p-0.5" />
+              </div>
+            )}
+            <h1 className="text-xl font-bold text-orange-400">{businessName || 'מסך מטבח'}</h1>
             <span className="text-gray-400 text-sm">
               {totalActive} הזמנות פעילות
             </span>
