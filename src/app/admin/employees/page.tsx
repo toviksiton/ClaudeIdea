@@ -19,6 +19,54 @@ const ROLES: Record<string, { label: string; color: string; icon: string }> = {
 
 const EMPTY = { name: '', phone: '', role: 'KITCHEN', hourlyRate: 0, referredById: '', referralBonus: 0, notes: '' }
 
+function EmpForm({ form, set, employees, excludeId }: { form: any; set: (f: any) => void; employees: any[]; excludeId: number | null }) {
+  const others = employees.filter((e) => e.id !== excludeId)
+  return (
+    <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
+      <div>
+        <label className="text-xs text-gray-500 mb-1 block">שם מלא</label>
+        <input value={form.name} onChange={(e) => set({ ...form, name: e.target.value })} placeholder="ישראל ישראלי"
+          className="w-full border border-gray-200 rounded-xl px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-orange-300" />
+      </div>
+      <div>
+        <label className="text-xs text-gray-500 mb-1 block">טלפון</label>
+        <input type="tel" value={form.phone} onChange={(e) => set({ ...form, phone: e.target.value })}
+          className="w-full border border-gray-200 rounded-xl px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-orange-300" />
+      </div>
+      <div>
+        <label className="text-xs text-gray-500 mb-1 block">תפקיד</label>
+        <select value={form.role} onChange={(e) => set({ ...form, role: e.target.value })}
+          className="w-full border border-gray-200 rounded-xl px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-orange-300">
+          {Object.entries(ROLES).map(([k, v]) => <option key={k} value={k}>{v.icon} {v.label}</option>)}
+        </select>
+      </div>
+      <div>
+        <label className="text-xs text-gray-500 mb-1 block">שכר לשעה (₪)</label>
+        <input type="number" value={form.hourlyRate} onChange={(e) => set({ ...form, hourlyRate: parseFloat(e.target.value) || 0 })}
+          className="w-full border border-gray-200 rounded-xl px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-orange-300" />
+      </div>
+      <div>
+        <label className="text-xs text-gray-500 mb-1 block flex items-center gap-1"><Star size={11} className="text-amber-400" /> הופנה ע״י</label>
+        <select value={form.referredById} onChange={(e) => set({ ...form, referredById: e.target.value })}
+          className="w-full border border-gray-200 rounded-xl px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-orange-300">
+          <option value="">— ללא ממליץ —</option>
+          {others.map((e) => <option key={e.id} value={e.id}>{e.name}</option>)}
+        </select>
+      </div>
+      <div>
+        <label className="text-xs text-gray-500 mb-1 block">בונוס המלצה (₪)</label>
+        <input type="number" value={form.referralBonus} onChange={(e) => set({ ...form, referralBonus: parseFloat(e.target.value) || 0 })}
+          className="w-full border border-gray-200 rounded-xl px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-orange-300" />
+      </div>
+      <div className="md:col-span-3">
+        <label className="text-xs text-gray-500 mb-1 block">הערות</label>
+        <input value={form.notes} onChange={(e) => set({ ...form, notes: e.target.value })}
+          className="w-full border border-gray-200 rounded-xl px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-orange-300" />
+      </div>
+    </div>
+  )
+}
+
 export default function EmployeesPage() {
   const [employees, setEmployees] = useState<Employee[]>([])
   const [loading, setLoading] = useState(true)
@@ -67,54 +115,6 @@ export default function EmployeesPage() {
   const activeEmps = employees.filter((e) => e.status === 'ACTIVE')
   const referralStats = employees.reduce((acc, e) => { if (e.referredById) acc.count++; return acc }, { count: 0 })
 
-  function EmpForm({ form, set }: { form: any; set: (f: any) => void }) {
-    const others = employees.filter((e) => e.id !== editId)
-    return (
-      <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
-        <div>
-          <label className="text-xs text-gray-500 mb-1 block">שם מלא</label>
-          <input value={form.name} onChange={(e) => set({ ...form, name: e.target.value })} placeholder="ישראל ישראלי"
-            className="w-full border border-gray-200 rounded-xl px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-orange-300" />
-        </div>
-        <div>
-          <label className="text-xs text-gray-500 mb-1 block">טלפון</label>
-          <input type="tel" value={form.phone} onChange={(e) => set({ ...form, phone: e.target.value })}
-            className="w-full border border-gray-200 rounded-xl px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-orange-300" />
-        </div>
-        <div>
-          <label className="text-xs text-gray-500 mb-1 block">תפקיד</label>
-          <select value={form.role} onChange={(e) => set({ ...form, role: e.target.value })}
-            className="w-full border border-gray-200 rounded-xl px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-orange-300">
-            {Object.entries(ROLES).map(([k, v]) => <option key={k} value={k}>{v.icon} {v.label}</option>)}
-          </select>
-        </div>
-        <div>
-          <label className="text-xs text-gray-500 mb-1 block">שכר לשעה (₪)</label>
-          <input type="number" value={form.hourlyRate} onChange={(e) => set({ ...form, hourlyRate: parseFloat(e.target.value) || 0 })}
-            className="w-full border border-gray-200 rounded-xl px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-orange-300" />
-        </div>
-        <div>
-          <label className="text-xs text-gray-500 mb-1 block flex items-center gap-1"><Star size={11} className="text-amber-400" /> הופנה ע״י</label>
-          <select value={form.referredById} onChange={(e) => set({ ...form, referredById: e.target.value })}
-            className="w-full border border-gray-200 rounded-xl px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-orange-300">
-            <option value="">— ללא ממליץ —</option>
-            {others.map((e) => <option key={e.id} value={e.id}>{e.name}</option>)}
-          </select>
-        </div>
-        <div>
-          <label className="text-xs text-gray-500 mb-1 block">בונוס המלצה (₪)</label>
-          <input type="number" value={form.referralBonus} onChange={(e) => set({ ...form, referralBonus: parseFloat(e.target.value) || 0 })}
-            className="w-full border border-gray-200 rounded-xl px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-orange-300" />
-        </div>
-        <div className="md:col-span-3">
-          <label className="text-xs text-gray-500 mb-1 block">הערות</label>
-          <input value={form.notes} onChange={(e) => set({ ...form, notes: e.target.value })}
-            className="w-full border border-gray-200 rounded-xl px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-orange-300" />
-        </div>
-      </div>
-    )
-  }
-
   return (
     <div>
       <div className="flex items-center justify-between mb-6">
@@ -146,7 +146,7 @@ export default function EmployeesPage() {
       {showNew && (
         <div className="bg-white rounded-2xl shadow-sm border p-4 mb-4 animate-fade-in">
           <h3 className="font-bold text-gray-800 mb-3">עובד חדש</h3>
-          <EmpForm form={newForm} set={setNewForm} />
+          <EmpForm form={newForm} set={setNewForm} employees={employees} excludeId={null} />
           <div className="flex gap-2 mt-3">
             <button onClick={create} disabled={saving} className="flex items-center gap-1.5 bg-green-500 text-white px-4 py-2 rounded-xl text-sm font-medium"><Save size={14} /> שמור</button>
             <button onClick={() => setShowNew(false)} className="text-gray-500 px-3 py-2 text-sm"><X size={14} /></button>
@@ -164,7 +164,7 @@ export default function EmployeesPage() {
                 <div className="p-4">
                   {isEditing ? (
                     <>
-                      <EmpForm form={editForm} set={setEditForm} />
+                      <EmpForm form={editForm} set={setEditForm} employees={employees} excludeId={emp.id} />
                       <div className="flex gap-2 mt-3">
                         <button onClick={() => save(emp.id)} disabled={saving} className="flex items-center gap-1.5 bg-green-500 text-white px-4 py-2 rounded-xl text-sm font-medium"><Save size={14} /> שמור</button>
                         <button onClick={() => setEditId(null)} className="text-gray-500 px-3 py-2 text-sm"><X size={14} /></button>

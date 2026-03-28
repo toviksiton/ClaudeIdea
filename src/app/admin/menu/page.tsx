@@ -31,6 +31,117 @@ function calcCosts(
   return { ingCost, laborCost, total: ingCost + laborCost }
 }
 
+function IngredientEditor({ form, setForm, allIngredients }: { form: typeof EMPTY_ITEM; setForm: (f: typeof EMPTY_ITEM) => void; allIngredients: Ingredient[] }) {
+  function addIng() {
+    const first = allIngredients.find((a) => !form.ingredients.find((i) => i.ingredientId === a.id))
+    if (!first) return
+    setForm({ ...form, ingredients: [...form.ingredients, { ingredientId: first.id, quantity: 1 }] })
+  }
+  return (
+    <div className="mt-3 border border-dashed border-gray-200 rounded-xl p-3">
+      <div className="flex items-center justify-between mb-2">
+        <p className="text-xs font-semibold text-gray-500">מרכיבים נדרשים</p>
+        <button type="button" onClick={addIng} className="flex items-center gap-1 text-xs text-orange-500 hover:text-orange-600">
+          <Plus size={12} /> הוסף מרכיב
+        </button>
+      </div>
+      {form.ingredients.length === 0 && <p className="text-xs text-gray-400 text-center py-1">ללא מרכיבים</p>}
+      {form.ingredients.map((ing, idx) => (
+        <div key={idx} className="flex gap-2 items-center mb-1.5">
+          <select
+            value={ing.ingredientId}
+            onChange={(e) => setForm({ ...form, ingredients: form.ingredients.map((i, ii) => ii === idx ? { ...i, ingredientId: parseInt(e.target.value) } : i) })}
+            className="flex-1 border border-gray-200 rounded-lg px-2 py-1.5 text-xs focus:outline-none"
+          >
+            {allIngredients.map((a) => <option key={a.id} value={a.id}>{a.name} ({a.unit})</option>)}
+          </select>
+          <input
+            type="number" value={ing.quantity} min="0.1" step="0.5"
+            onChange={(e) => setForm({ ...form, ingredients: form.ingredients.map((i, ii) => ii === idx ? { ...i, quantity: parseFloat(e.target.value) || 0 } : i) })}
+            className="w-20 border border-gray-200 rounded-lg px-2 py-1.5 text-xs focus:outline-none"
+          />
+          <button onClick={() => setForm({ ...form, ingredients: form.ingredients.filter((_, i) => i !== idx) })} className="text-red-400 hover:text-red-600">
+            <X size={14} />
+          </button>
+        </div>
+      ))}
+    </div>
+  )
+}
+
+function CostPreview({ form, allIngredients }: { form: typeof EMPTY_ITEM; allIngredients: Ingredient[] }) {
+  const { ingCost, laborCost, total } = calcCosts(form.ingredients, allIngredients, form.prepTimeMinutes)
+  if (total === 0) return null
+  const margin = form.price > 0 ? ((form.price - total) / form.price * 100) : 0
+  return (
+    <div className="mt-3 bg-blue-50 rounded-xl p-3 text-xs">
+      <p className="font-semibold text-blue-700 mb-1.5 flex items-center gap-1"><TrendingUp size={13} /> חישוב עלויות</p>
+      <div className="grid grid-cols-2 gap-x-4 gap-y-1 text-blue-800">
+        <span>עלות חומרי גלם:</span><span className="font-bold">₪{ingCost.toFixed(2)}</span>
+        <span>עלות עבודה ({form.prepTimeMinutes} ד׳):</span><span className="font-bold">₪{laborCost.toFixed(2)}</span>
+        <span className="border-t border-blue-200 pt-1">עלות כוללת:</span><span className="font-bold border-t border-blue-200 pt-1">₪{total.toFixed(2)}</span>
+        {form.price > 0 && (
+          <>
+            <span>מחיר מכירה:</span><span className="font-bold">₪{Number(form.price).toFixed(2)}</span>
+            <span>רווח גולמי:</span>
+            <span className={`font-bold ${margin >= 0 ? 'text-green-700' : 'text-red-600'}`}>
+              ₪{(Number(form.price) - total).toFixed(2)} ({margin.toFixed(0)}%)
+            </span>
+          </>
+        )}
+      </div>
+    </div>
+  )
+}
+
+function ItemForm({ form, setForm, onSave, onCancel, saving, allIngredients }: { form: typeof EMPTY_ITEM; setForm: (f: typeof EMPTY_ITEM) => void; onSave: () => void; onCancel: () => void; saving: boolean; allIngredients: Ingredient[] }) {
+  return (
+    <div className="bg-orange-50 border border-orange-100 rounded-2xl p-4 mt-2 animate-fade-in">
+      <div className="grid grid-cols-2 md:grid-cols-4 gap-3 mb-3">
+        <div>
+          <label className="text-xs text-gray-500 mb-1 block">שם הפריט</label>
+          <input value={form.name} onChange={(e) => setForm({ ...form, name: e.target.value })} placeholder="המבורגר ביתי"
+            className="w-full border border-gray-200 rounded-xl px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-orange-300" />
+        </div>
+        <div>
+          <label className="text-xs text-gray-500 mb-1 block">מחיר מכירה (₪)</label>
+          <input type="number" value={form.price} onChange={(e) => setForm({ ...form, price: parseFloat(e.target.value) || 0 })}
+            className="w-full border border-gray-200 rounded-xl px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-orange-300" />
+        </div>
+        <div>
+          <label className="text-xs text-gray-500 mb-1 block">קטגוריה</label>
+          <input value={form.category} onChange={(e) => setForm({ ...form, category: e.target.value })} placeholder="המבורגרים"
+            className="w-full border border-gray-200 rounded-xl px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-orange-300" />
+        </div>
+        <div>
+          <label className="text-xs text-gray-500 mb-1 block flex items-center gap-1">
+            <Clock size={11} /> זמן הכנה (דקות)
+          </label>
+          <input type="number" value={form.prepTimeMinutes} min="0" onChange={(e) => setForm({ ...form, prepTimeMinutes: parseInt(e.target.value) || 0 })}
+            placeholder="15"
+            className="w-full border border-gray-200 rounded-xl px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-orange-300" />
+        </div>
+      </div>
+      <div>
+        <label className="text-xs text-gray-500 mb-1 block">תיאור</label>
+        <textarea value={form.description} onChange={(e) => setForm({ ...form, description: e.target.value })} placeholder="תיאור הפריט..." rows={2}
+          className="w-full border border-gray-200 rounded-xl px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-orange-300 resize-none" />
+      </div>
+      <IngredientEditor form={form} setForm={setForm} allIngredients={allIngredients} />
+      <CostPreview form={form} allIngredients={allIngredients} />
+      <div className="flex gap-2 mt-3">
+        <button onClick={onSave} disabled={saving}
+          className="flex items-center gap-1.5 bg-green-500 hover:bg-green-600 text-white px-4 py-2 rounded-xl text-sm font-medium">
+          <Save size={14} /> שמור
+        </button>
+        <button onClick={onCancel} className="flex items-center gap-1.5 text-gray-500 px-3 py-2 rounded-xl text-sm hover:bg-white">
+          <X size={14} /> ביטול
+        </button>
+      </div>
+    </div>
+  )
+}
+
 export default function MenuAdminPage() {
   const [items, setItems] = useState<MenuItem[]>([])
   const [allIngredients, setAllIngredients] = useState<Ingredient[]>([])
@@ -86,117 +197,6 @@ export default function MenuAdminPage() {
     await load()
   }
 
-  function IngredientEditor({ form, setForm }: { form: typeof EMPTY_ITEM; setForm: (f: typeof EMPTY_ITEM) => void }) {
-    function addIng() {
-      const first = allIngredients.find((a) => !form.ingredients.find((i) => i.ingredientId === a.id))
-      if (!first) return
-      setForm({ ...form, ingredients: [...form.ingredients, { ingredientId: first.id, quantity: 1 }] })
-    }
-    return (
-      <div className="mt-3 border border-dashed border-gray-200 rounded-xl p-3">
-        <div className="flex items-center justify-between mb-2">
-          <p className="text-xs font-semibold text-gray-500">מרכיבים נדרשים</p>
-          <button type="button" onClick={addIng} className="flex items-center gap-1 text-xs text-orange-500 hover:text-orange-600">
-            <Plus size={12} /> הוסף מרכיב
-          </button>
-        </div>
-        {form.ingredients.length === 0 && <p className="text-xs text-gray-400 text-center py-1">ללא מרכיבים</p>}
-        {form.ingredients.map((ing, idx) => (
-          <div key={idx} className="flex gap-2 items-center mb-1.5">
-            <select
-              value={ing.ingredientId}
-              onChange={(e) => setForm({ ...form, ingredients: form.ingredients.map((i, ii) => ii === idx ? { ...i, ingredientId: parseInt(e.target.value) } : i) })}
-              className="flex-1 border border-gray-200 rounded-lg px-2 py-1.5 text-xs focus:outline-none"
-            >
-              {allIngredients.map((a) => <option key={a.id} value={a.id}>{a.name} ({a.unit})</option>)}
-            </select>
-            <input
-              type="number" value={ing.quantity} min="0.1" step="0.5"
-              onChange={(e) => setForm({ ...form, ingredients: form.ingredients.map((i, ii) => ii === idx ? { ...i, quantity: parseFloat(e.target.value) || 0 } : i) })}
-              className="w-20 border border-gray-200 rounded-lg px-2 py-1.5 text-xs focus:outline-none"
-            />
-            <button onClick={() => setForm({ ...form, ingredients: form.ingredients.filter((_, i) => i !== idx) })} className="text-red-400 hover:text-red-600">
-              <X size={14} />
-            </button>
-          </div>
-        ))}
-      </div>
-    )
-  }
-
-  function CostPreview({ form }: { form: typeof EMPTY_ITEM }) {
-    const { ingCost, laborCost, total } = calcCosts(form.ingredients, allIngredients, form.prepTimeMinutes)
-    if (total === 0) return null
-    const margin = form.price > 0 ? ((form.price - total) / form.price * 100) : 0
-    return (
-      <div className="mt-3 bg-blue-50 rounded-xl p-3 text-xs">
-        <p className="font-semibold text-blue-700 mb-1.5 flex items-center gap-1"><TrendingUp size={13} /> חישוב עלויות</p>
-        <div className="grid grid-cols-2 gap-x-4 gap-y-1 text-blue-800">
-          <span>עלות חומרי גלם:</span><span className="font-bold">₪{ingCost.toFixed(2)}</span>
-          <span>עלות עבודה ({form.prepTimeMinutes} ד׳):</span><span className="font-bold">₪{laborCost.toFixed(2)}</span>
-          <span className="border-t border-blue-200 pt-1">עלות כוללת:</span><span className="font-bold border-t border-blue-200 pt-1">₪{total.toFixed(2)}</span>
-          {form.price > 0 && (
-            <>
-              <span>מחיר מכירה:</span><span className="font-bold">₪{Number(form.price).toFixed(2)}</span>
-              <span>רווח גולמי:</span>
-              <span className={`font-bold ${margin >= 0 ? 'text-green-700' : 'text-red-600'}`}>
-                ₪{(Number(form.price) - total).toFixed(2)} ({margin.toFixed(0)}%)
-              </span>
-            </>
-          )}
-        </div>
-      </div>
-    )
-  }
-
-  function ItemForm({ form, setForm, onSave, onCancel }: { form: typeof EMPTY_ITEM; setForm: (f: typeof EMPTY_ITEM) => void; onSave: () => void; onCancel: () => void }) {
-    return (
-      <div className="bg-orange-50 border border-orange-100 rounded-2xl p-4 mt-2 animate-fade-in">
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-3 mb-3">
-          <div>
-            <label className="text-xs text-gray-500 mb-1 block">שם הפריט</label>
-            <input value={form.name} onChange={(e) => setForm({ ...form, name: e.target.value })} placeholder="המבורגר ביתי"
-              className="w-full border border-gray-200 rounded-xl px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-orange-300" />
-          </div>
-          <div>
-            <label className="text-xs text-gray-500 mb-1 block">מחיר מכירה (₪)</label>
-            <input type="number" value={form.price} onChange={(e) => setForm({ ...form, price: parseFloat(e.target.value) || 0 })}
-              className="w-full border border-gray-200 rounded-xl px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-orange-300" />
-          </div>
-          <div>
-            <label className="text-xs text-gray-500 mb-1 block">קטגוריה</label>
-            <input value={form.category} onChange={(e) => setForm({ ...form, category: e.target.value })} placeholder="המבורגרים"
-              className="w-full border border-gray-200 rounded-xl px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-orange-300" />
-          </div>
-          <div>
-            <label className="text-xs text-gray-500 mb-1 block flex items-center gap-1">
-              <Clock size={11} /> זמן הכנה (דקות)
-            </label>
-            <input type="number" value={form.prepTimeMinutes} min="0" onChange={(e) => setForm({ ...form, prepTimeMinutes: parseInt(e.target.value) || 0 })}
-              placeholder="15"
-              className="w-full border border-gray-200 rounded-xl px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-orange-300" />
-          </div>
-        </div>
-        <div>
-          <label className="text-xs text-gray-500 mb-1 block">תיאור</label>
-          <textarea value={form.description} onChange={(e) => setForm({ ...form, description: e.target.value })} placeholder="תיאור הפריט..." rows={2}
-            className="w-full border border-gray-200 rounded-xl px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-orange-300 resize-none" />
-        </div>
-        <IngredientEditor form={form} setForm={setForm} />
-        <CostPreview form={form} />
-        <div className="flex gap-2 mt-3">
-          <button onClick={onSave} disabled={saving}
-            className="flex items-center gap-1.5 bg-green-500 hover:bg-green-600 text-white px-4 py-2 rounded-xl text-sm font-medium">
-            <Save size={14} /> שמור
-          </button>
-          <button onClick={onCancel} className="flex items-center gap-1.5 text-gray-500 px-3 py-2 rounded-xl text-sm hover:bg-white">
-            <X size={14} /> ביטול
-          </button>
-        </div>
-      </div>
-    )
-  }
-
   return (
     <div>
       <div className="flex items-center justify-between mb-6">
@@ -212,7 +212,7 @@ export default function MenuAdminPage() {
       {showNew && (
         <div className="bg-white rounded-2xl shadow-sm border p-4 mb-4">
           <h3 className="font-bold text-gray-800 mb-2">פריט חדש לתפריט</h3>
-          <ItemForm form={newForm} setForm={setNewForm} onSave={createItem} onCancel={() => setShowNew(false)} />
+          <ItemForm form={newForm} setForm={setNewForm} onSave={createItem} onCancel={() => setShowNew(false)} saving={saving} allIngredients={allIngredients} />
         </div>
       )}
 
@@ -315,7 +315,7 @@ export default function MenuAdminPage() {
 
                 {editingId === item.id && (
                   <div className="px-4 pb-4">
-                    <ItemForm form={editForm} setForm={setEditForm} onSave={() => saveEdit(item.id)} onCancel={() => setEditingId(null)} />
+                    <ItemForm form={editForm} setForm={setEditForm} onSave={() => saveEdit(item.id)} onCancel={() => setEditingId(null)} saving={saving} allIngredients={allIngredients} />
                   </div>
                 )}
               </div>

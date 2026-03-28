@@ -11,6 +11,26 @@ interface Supplier {
 
 const EMPTY = { name: '', phone: '', email: '', notes: '' }
 
+function SupplierForm({ form, set }: { form: typeof EMPTY; set: (f: typeof EMPTY) => void }) {
+  return (
+    <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+      {[
+        { key: 'name', label: 'שם ספק', placeholder: 'מינהרת המזון' },
+        { key: 'phone', label: 'טלפון', placeholder: '050-0000000' },
+        { key: 'email', label: 'אימייל', placeholder: 'supplier@example.com' },
+        { key: 'notes', label: 'הערות', placeholder: '' },
+      ].map(({ key, label, placeholder }) => (
+        <div key={key}>
+          <label className="text-xs text-gray-500 mb-1 block">{label}</label>
+          <input value={(form as any)[key]} onChange={(e) => set({ ...form, [key]: e.target.value })}
+            placeholder={placeholder}
+            className="w-full border border-gray-200 rounded-xl px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-orange-300" />
+        </div>
+      ))}
+    </div>
+  )
+}
+
 export default function SuppliersPage() {
   const [suppliers, setSuppliers] = useState<Supplier[]>([])
   const [loading, setLoading] = useState(true)
@@ -51,26 +71,6 @@ export default function SuppliersPage() {
     await fetch(`/api/finance/suppliers/${id}`, { method: 'DELETE' }); await load(); showMsg('ספק נמחק')
   }
 
-  function Form({ form, set }: { form: typeof EMPTY; set: (f: typeof EMPTY) => void }) {
-    return (
-      <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
-        {[
-          { key: 'name', label: 'שם ספק', placeholder: 'מינהרת המזון' },
-          { key: 'phone', label: 'טלפון', placeholder: '050-0000000' },
-          { key: 'email', label: 'אימייל', placeholder: 'supplier@example.com' },
-          { key: 'notes', label: 'הערות', placeholder: '' },
-        ].map(({ key, label, placeholder }) => (
-          <div key={key}>
-            <label className="text-xs text-gray-500 mb-1 block">{label}</label>
-            <input value={(form as any)[key]} onChange={(e) => set({ ...form, [key]: e.target.value })}
-              placeholder={placeholder}
-              className="w-full border border-gray-200 rounded-xl px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-orange-300" />
-          </div>
-        ))}
-      </div>
-    )
-  }
-
   return (
     <div>
       <div className="flex items-center gap-2 mb-1">
@@ -91,7 +91,7 @@ export default function SuppliersPage() {
       {showNew && (
         <div className="bg-white rounded-2xl shadow-sm border p-4 mb-4 animate-fade-in">
           <h3 className="font-bold text-gray-800 mb-3">ספק חדש</h3>
-          <Form form={newForm} set={setNewForm} />
+          <SupplierForm form={newForm} set={setNewForm} />
           <div className="flex gap-2 mt-3">
             <button onClick={create} disabled={saving} className="flex items-center gap-1.5 bg-green-500 text-white px-4 py-2 rounded-xl text-sm font-medium"><Save size={14} /> שמור</button>
             <button onClick={() => setShowNew(false)} className="text-gray-500 px-3 py-2 rounded-xl text-sm"><X size={14} /></button>
@@ -120,7 +120,7 @@ export default function SuppliersPage() {
                   {editId === s.id ? (
                     <>
                       <td colSpan={5} className="px-4 py-3">
-                        <Form form={editForm} set={setEditForm} />
+                        <SupplierForm form={editForm} set={setEditForm} />
                       </td>
                       <td className="px-4 py-3">
                         <div className="flex gap-1">

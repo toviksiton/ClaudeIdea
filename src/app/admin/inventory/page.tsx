@@ -18,6 +18,49 @@ interface Supplier { id: number; name: string }
 
 const EMPTY_FORM = { name: '', unit: "יח'", quantity: 0, alertLevel: 5, costPerUnit: 0, supplierId: '' }
 
+function IngForm({ form, set, suppliers }: { form: typeof EMPTY_FORM; set: (f: typeof EMPTY_FORM) => void; suppliers: Supplier[] }) {
+  return (
+    <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-3">
+      <div>
+        <label className="text-xs text-gray-500 mb-1 block">שם מרכיב</label>
+        <input value={form.name} onChange={(e) => set({ ...form, name: e.target.value })}
+          placeholder="לחמניית המבורגר"
+          className="w-full border border-gray-200 rounded-xl px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-orange-300" />
+      </div>
+      <div>
+        <label className="text-xs text-gray-500 mb-1 block">יחידת מדידה</label>
+        <select value={form.unit} onChange={(e) => set({ ...form, unit: e.target.value })}
+          className="w-full border border-gray-200 rounded-xl px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-orange-300">
+          {["יח'", 'גרם', 'ק"ג', 'מ"ל', 'ליטר', 'כף', 'כוס', 'עלה', 'שן'].map((u) => <option key={u}>{u}</option>)}
+        </select>
+      </div>
+      <div>
+        <label className="text-xs text-gray-500 mb-1 block">כמות במלאי</label>
+        <input type="number" value={form.quantity} onChange={(e) => set({ ...form, quantity: parseFloat(e.target.value) || 0 })}
+          className="w-full border border-gray-200 rounded-xl px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-orange-300" />
+      </div>
+      <div>
+        <label className="text-xs text-gray-500 mb-1 block">עלות ליחידה (₪)</label>
+        <input type="number" step="0.01" value={form.costPerUnit} onChange={(e) => set({ ...form, costPerUnit: parseFloat(e.target.value) || 0 })}
+          className="w-full border border-gray-200 rounded-xl px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-orange-300" />
+      </div>
+      <div>
+        <label className="text-xs text-gray-500 mb-1 block">רמת התראה</label>
+        <input type="number" value={form.alertLevel} onChange={(e) => set({ ...form, alertLevel: parseFloat(e.target.value) || 0 })}
+          className="w-full border border-gray-200 rounded-xl px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-orange-300" />
+      </div>
+      <div>
+        <label className="text-xs text-gray-500 mb-1 block">ספק</label>
+        <select value={form.supplierId} onChange={(e) => set({ ...form, supplierId: e.target.value })}
+          className="w-full border border-gray-200 rounded-xl px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-orange-300">
+          <option value="">— ללא ספק —</option>
+          {suppliers.map((s) => <option key={s.id} value={s.id}>{s.name}</option>)}
+        </select>
+      </div>
+    </div>
+  )
+}
+
 export default function InventoryPage() {
   const [ingredients, setIngredients] = useState<Ingredient[]>([])
   const [suppliers, setSuppliers] = useState<Supplier[]>([])
@@ -97,49 +140,6 @@ export default function InventoryPage() {
 
   const lowStock = ingredients.filter((i) => i.quantity <= i.alertLevel)
 
-  function IngForm({ form, set }: { form: typeof EMPTY_FORM; set: (f: typeof EMPTY_FORM) => void }) {
-    return (
-      <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-3">
-        <div>
-          <label className="text-xs text-gray-500 mb-1 block">שם מרכיב</label>
-          <input value={form.name} onChange={(e) => set({ ...form, name: e.target.value })}
-            placeholder="לחמניית המבורגר"
-            className="w-full border border-gray-200 rounded-xl px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-orange-300" />
-        </div>
-        <div>
-          <label className="text-xs text-gray-500 mb-1 block">יחידת מדידה</label>
-          <select value={form.unit} onChange={(e) => set({ ...form, unit: e.target.value })}
-            className="w-full border border-gray-200 rounded-xl px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-orange-300">
-            {["יח'", 'גרם', 'ק"ג', 'מ"ל', 'ליטר', 'כף', 'כוס', 'עלה', 'שן'].map((u) => <option key={u}>{u}</option>)}
-          </select>
-        </div>
-        <div>
-          <label className="text-xs text-gray-500 mb-1 block">כמות במלאי</label>
-          <input type="number" value={form.quantity} onChange={(e) => set({ ...form, quantity: parseFloat(e.target.value) || 0 })}
-            className="w-full border border-gray-200 rounded-xl px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-orange-300" />
-        </div>
-        <div>
-          <label className="text-xs text-gray-500 mb-1 block">עלות ליחידה (₪)</label>
-          <input type="number" step="0.01" value={form.costPerUnit} onChange={(e) => set({ ...form, costPerUnit: parseFloat(e.target.value) || 0 })}
-            className="w-full border border-gray-200 rounded-xl px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-orange-300" />
-        </div>
-        <div>
-          <label className="text-xs text-gray-500 mb-1 block">רמת התראה</label>
-          <input type="number" value={form.alertLevel} onChange={(e) => set({ ...form, alertLevel: parseFloat(e.target.value) || 0 })}
-            className="w-full border border-gray-200 rounded-xl px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-orange-300" />
-        </div>
-        <div>
-          <label className="text-xs text-gray-500 mb-1 block">ספק</label>
-          <select value={form.supplierId} onChange={(e) => set({ ...form, supplierId: e.target.value })}
-            className="w-full border border-gray-200 rounded-xl px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-orange-300">
-            <option value="">— ללא ספק —</option>
-            {suppliers.map((s) => <option key={s.id} value={s.id}>{s.name}</option>)}
-          </select>
-        </div>
-      </div>
-    )
-  }
-
   return (
     <div>
       <div className="flex items-center justify-between mb-6">
@@ -173,7 +173,7 @@ export default function InventoryPage() {
       {showNew && (
         <div className="bg-white rounded-2xl shadow-sm border p-4 mb-4 animate-fade-in">
           <h3 className="font-bold text-gray-800 mb-3">מרכיב חדש</h3>
-          <IngForm form={newForm} set={setNewForm} />
+          <IngForm form={newForm} set={setNewForm} suppliers={suppliers} />
           <div className="flex gap-2 mt-3">
             <button onClick={createIngredient} disabled={saving}
               className="flex items-center gap-1.5 bg-green-500 hover:bg-green-600 text-white px-4 py-2 rounded-xl text-sm font-medium">

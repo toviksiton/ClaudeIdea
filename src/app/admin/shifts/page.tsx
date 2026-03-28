@@ -23,6 +23,109 @@ const STATUS_COLORS: Record<string, string> = {
 }
 const STATUS_LABELS: Record<string, string> = { PLANNED: 'מתוכנן', ACTIVE: 'פעיל', COMPLETED: 'הסתיים', CANCELLED: 'בוטל' }
 
+function AssignmentEditor({ form, set, employees, onAdd, onUpdate, onRemove }: {
+  form: any; set: (f: any) => void; employees: Employee[]
+  onAdd: () => void; onUpdate: (idx: number, patch: any) => void; onRemove: (idx: number) => void
+}) {
+  return (
+    <div className="border border-dashed border-gray-200 rounded-xl p-3 mt-3">
+      <div className="flex items-center justify-between mb-2">
+        <p className="text-xs font-semibold text-gray-500 flex items-center gap-1"><Users size={12} /> שיבוץ עובדים</p>
+        <button type="button" onClick={onAdd} className="flex items-center gap-1 text-xs text-orange-500 hover:text-orange-600">
+          <Plus size={12} /> הוסף עובד
+        </button>
+      </div>
+      {form.assignments.length === 0 && <p className="text-xs text-gray-400 text-center py-1">לחץ "הוסף עובד" לשיבוץ</p>}
+      {form.assignments.map((a: any, idx: number) => (
+        <div key={idx} className="grid grid-cols-5 gap-2 mb-2 items-end">
+          <div className="col-span-2">
+            <label className="text-xs text-gray-400 mb-0.5 block">עובד</label>
+            <select value={a.employeeId} onChange={(e) => {
+              const emp = employees.find((em) => em.id === parseInt(e.target.value))
+              onUpdate(idx, { employeeId: parseInt(e.target.value), role: emp?.role || a.role, hourlyRate: emp?.hourlyRate || a.hourlyRate })
+            }} className="w-full border border-gray-200 rounded-lg px-2 py-1.5 text-xs focus:outline-none">
+              {employees.map((e) => <option key={e.id} value={e.id}>{e.name}</option>)}
+            </select>
+          </div>
+          <div>
+            <label className="text-xs text-gray-400 mb-0.5 block">שעות</label>
+            <input type="number" step="0.5" value={a.hours} onChange={(e) => onUpdate(idx, { hours: parseFloat(e.target.value) || 0 })}
+              className="w-full border border-gray-200 rounded-lg px-2 py-1.5 text-xs focus:outline-none" />
+          </div>
+          <div>
+            <label className="text-xs text-gray-400 mb-0.5 block">₪/שעה</label>
+            <input type="number" value={a.hourlyRate} onChange={(e) => onUpdate(idx, { hourlyRate: parseFloat(e.target.value) || 0 })}
+              className="w-full border border-gray-200 rounded-lg px-2 py-1.5 text-xs focus:outline-none" />
+          </div>
+          <div className="flex items-end gap-1">
+            <div className="flex-1">
+              <label className="text-xs text-gray-400 mb-0.5 block">בונוס</label>
+              <input type="number" value={a.bonus} onChange={(e) => onUpdate(idx, { bonus: parseFloat(e.target.value) || 0 })}
+                className="w-full border border-gray-200 rounded-lg px-2 py-1.5 text-xs focus:outline-none" />
+            </div>
+            <button onClick={() => onRemove(idx)} className="text-red-400 hover:text-red-600 mb-1.5"><X size={14} /></button>
+          </div>
+        </div>
+      ))}
+      {form.assignments.length > 0 && (
+        <p className="text-xs text-gray-500 mt-2 text-left">
+          עלות עבודה: ₪{form.assignments.reduce((s: number, a: any) => s + (a.hours * a.hourlyRate + a.bonus), 0).toFixed(0)}
+        </p>
+      )}
+    </div>
+  )
+}
+
+function ShiftForm({ form, set, onSave, onCancel, saving, employees }: {
+  form: any; set: any; onSave: () => void; onCancel: () => void; saving: boolean; employees: Employee[]
+}) {
+  function addAssignment() {
+    const first = employees.find((e) => !form.assignments.find((a: any) => a.employeeId === e.id))
+    if (!first) return
+    set({ ...form, assignments: [...form.assignments, { employeeId: first.id, role: first.role, hours: 8, hourlyRate: first.hourlyRate, bonus: 0, notes: '' }] })
+  }
+  function updateAssignment(idx: number, patch: any) {
+    set({ ...form, assignments: form.assignments.map((a: any, i: number) => i === idx ? { ...a, ...patch } : a) })
+  }
+  function removeAssignment(idx: number) {
+    set({ ...form, assignments: form.assignments.filter((_: any, i: number) => i !== idx) })
+  }
+  return (
+    <div className="bg-orange-50 border border-orange-100 rounded-2xl p-4 animate-fade-in">
+      <div className="grid grid-cols-2 md:grid-cols-4 gap-3 mb-2">
+        <div>
+          <label className="text-xs text-gray-500 mb-1 block">תאריך</label>
+          <input type="date" value={form.date} onChange={(e) => set({ ...form, date: e.target.value })}
+            className="w-full border border-gray-200 rounded-xl px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-orange-300" />
+        </div>
+        <div>
+          <label className="text-xs text-gray-500 mb-1 block">התחלה</label>
+          <input type="time" value={form.startTime} onChange={(e) => set({ ...form, startTime: e.target.value })}
+            className="w-full border border-gray-200 rounded-xl px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-orange-300" />
+        </div>
+        <div>
+          <label className="text-xs text-gray-500 mb-1 block">סיום</label>
+          <input type="time" value={form.endTime} onChange={(e) => set({ ...form, endTime: e.target.value })}
+            className="w-full border border-gray-200 rounded-xl px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-orange-300" />
+        </div>
+        <div>
+          <label className="text-xs text-gray-500 mb-1 block">הערות</label>
+          <input value={form.notes} onChange={(e) => set({ ...form, notes: e.target.value })}
+            className="w-full border border-gray-200 rounded-xl px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-orange-300" />
+        </div>
+      </div>
+      <AssignmentEditor form={form} set={set} employees={employees} onAdd={addAssignment} onUpdate={updateAssignment} onRemove={removeAssignment} />
+      <div className="flex gap-2 mt-3">
+        <button onClick={onSave} disabled={saving}
+          className="flex items-center gap-1.5 bg-green-500 hover:bg-green-600 text-white px-4 py-2 rounded-xl text-sm font-medium">
+          <Save size={14} /> שמור משמרת
+        </button>
+        <button onClick={onCancel} className="text-gray-500 px-3 py-2 text-sm"><X size={14} /></button>
+      </div>
+    </div>
+  )
+}
+
 export default function ShiftsPage() {
   const [shifts, setShifts] = useState<Shift[]>([])
   const [employees, setEmployees] = useState<Employee[]>([])
@@ -56,20 +159,6 @@ export default function ShiftsPage() {
 
   useEffect(() => { load() }, [monthKey])
   function showMsg(t: string) { setMsg(t); setTimeout(() => setMsg(''), 2500) }
-
-  function addAssignment(form: any, set: any) {
-    const firstEmp = employees.find((e) => !form.assignments.find((a: any) => a.employeeId === e.id))
-    if (!firstEmp) return
-    set({ ...form, assignments: [...form.assignments, { employeeId: firstEmp.id, role: firstEmp.role, hours: 8, hourlyRate: firstEmp.hourlyRate, bonus: 0, notes: '' }] })
-  }
-
-  function updateAssignment(form: any, set: any, idx: number, patch: any) {
-    set({ ...form, assignments: form.assignments.map((a: any, i: number) => i === idx ? { ...a, ...patch } : a) })
-  }
-
-  function removeAssignment(form: any, set: any, idx: number) {
-    set({ ...form, assignments: form.assignments.filter((_: any, i: number) => i !== idx) })
-  }
 
   async function createShift() {
     setSaving(true)
@@ -114,96 +203,6 @@ export default function ShiftsPage() {
     shiftsByDay[d].push(s)
   })
 
-  function AssignmentEditor({ form, set }: { form: any; set: (f: any) => void }) {
-    return (
-      <div className="border border-dashed border-gray-200 rounded-xl p-3 mt-3">
-        <div className="flex items-center justify-between mb-2">
-          <p className="text-xs font-semibold text-gray-500 flex items-center gap-1"><Users size={12} /> שיבוץ עובדים</p>
-          <button type="button" onClick={() => addAssignment(form, set)} className="flex items-center gap-1 text-xs text-orange-500 hover:text-orange-600">
-            <Plus size={12} /> הוסף עובד
-          </button>
-        </div>
-        {form.assignments.length === 0 && <p className="text-xs text-gray-400 text-center py-1">לחץ "הוסף עובד" לשיבוץ</p>}
-        {form.assignments.map((a: any, idx: number) => {
-          const emp = employees.find((e) => e.id === a.employeeId)
-          return (
-            <div key={idx} className="grid grid-cols-5 gap-2 mb-2 items-end">
-              <div className="col-span-2">
-                <label className="text-xs text-gray-400 mb-0.5 block">עובד</label>
-                <select value={a.employeeId} onChange={(e) => {
-                  const emp = employees.find((em) => em.id === parseInt(e.target.value))
-                  updateAssignment(form, set, idx, { employeeId: parseInt(e.target.value), role: emp?.role || a.role, hourlyRate: emp?.hourlyRate || a.hourlyRate })
-                }} className="w-full border border-gray-200 rounded-lg px-2 py-1.5 text-xs focus:outline-none">
-                  {employees.map((e) => <option key={e.id} value={e.id}>{e.name}</option>)}
-                </select>
-              </div>
-              <div>
-                <label className="text-xs text-gray-400 mb-0.5 block">שעות</label>
-                <input type="number" step="0.5" value={a.hours} onChange={(e) => updateAssignment(form, set, idx, { hours: parseFloat(e.target.value) || 0 })}
-                  className="w-full border border-gray-200 rounded-lg px-2 py-1.5 text-xs focus:outline-none" />
-              </div>
-              <div>
-                <label className="text-xs text-gray-400 mb-0.5 block">₪/שעה</label>
-                <input type="number" value={a.hourlyRate} onChange={(e) => updateAssignment(form, set, idx, { hourlyRate: parseFloat(e.target.value) || 0 })}
-                  className="w-full border border-gray-200 rounded-lg px-2 py-1.5 text-xs focus:outline-none" />
-              </div>
-              <div className="flex items-end gap-1">
-                <div className="flex-1">
-                  <label className="text-xs text-gray-400 mb-0.5 block">בונוס</label>
-                  <input type="number" value={a.bonus} onChange={(e) => updateAssignment(form, set, idx, { bonus: parseFloat(e.target.value) || 0 })}
-                    className="w-full border border-gray-200 rounded-lg px-2 py-1.5 text-xs focus:outline-none" />
-                </div>
-                <button onClick={() => removeAssignment(form, set, idx)} className="text-red-400 hover:text-red-600 mb-1.5"><X size={14} /></button>
-              </div>
-            </div>
-          )
-        })}
-        {form.assignments.length > 0 && (
-          <p className="text-xs text-gray-500 mt-2 text-left">
-            עלות עבודה: ₪{form.assignments.reduce((s: number, a: any) => s + (a.hours * a.hourlyRate + a.bonus), 0).toFixed(0)}
-          </p>
-        )}
-      </div>
-    )
-  }
-
-  function ShiftForm({ form, set, onSave, onCancel }: { form: any; set: any; onSave: () => void; onCancel: () => void }) {
-    return (
-      <div className="bg-orange-50 border border-orange-100 rounded-2xl p-4 animate-fade-in">
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-3 mb-2">
-          <div>
-            <label className="text-xs text-gray-500 mb-1 block">תאריך</label>
-            <input type="date" value={form.date} onChange={(e) => set({ ...form, date: e.target.value })}
-              className="w-full border border-gray-200 rounded-xl px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-orange-300" />
-          </div>
-          <div>
-            <label className="text-xs text-gray-500 mb-1 block">התחלה</label>
-            <input type="time" value={form.startTime} onChange={(e) => set({ ...form, startTime: e.target.value })}
-              className="w-full border border-gray-200 rounded-xl px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-orange-300" />
-          </div>
-          <div>
-            <label className="text-xs text-gray-500 mb-1 block">סיום</label>
-            <input type="time" value={form.endTime} onChange={(e) => set({ ...form, endTime: e.target.value })}
-              className="w-full border border-gray-200 rounded-xl px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-orange-300" />
-          </div>
-          <div>
-            <label className="text-xs text-gray-500 mb-1 block">הערות</label>
-            <input value={form.notes} onChange={(e) => set({ ...form, notes: e.target.value })}
-              className="w-full border border-gray-200 rounded-xl px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-orange-300" />
-          </div>
-        </div>
-        <AssignmentEditor form={form} set={set} />
-        <div className="flex gap-2 mt-3">
-          <button onClick={onSave} disabled={saving}
-            className="flex items-center gap-1.5 bg-green-500 hover:bg-green-600 text-white px-4 py-2 rounded-xl text-sm font-medium">
-            <Save size={14} /> שמור משמרת
-          </button>
-          <button onClick={onCancel} className="text-gray-500 px-3 py-2 text-sm"><X size={14} /></button>
-        </div>
-      </div>
-    )
-  }
-
   return (
     <div>
       <div className="flex items-center justify-between mb-6">
@@ -223,7 +222,7 @@ export default function ShiftsPage() {
       {showNewShift && (
         <div className="bg-white rounded-2xl shadow-sm border p-4 mb-4">
           <h3 className="font-bold text-gray-800 mb-3">משמרת חדשה</h3>
-          <ShiftForm form={newShift} set={setNewShift} onSave={createShift} onCancel={() => setShowNewShift(false)} />
+          <ShiftForm form={newShift} set={setNewShift} onSave={createShift} onCancel={() => setShowNewShift(false)} saving={saving} employees={employees} />
         </div>
       )}
 
@@ -286,7 +285,7 @@ export default function ShiftsPage() {
               <div key={shift.id} className="bg-white rounded-2xl shadow-sm border">
                 <div className="p-4">
                   {isEditing && editForm ? (
-                    <ShiftForm form={editForm} set={setEditForm} onSave={() => updateShift(shift.id, editForm)} onCancel={() => setEditShiftId(null)} />
+                    <ShiftForm form={editForm} set={setEditForm} onSave={() => updateShift(shift.id, editForm)} onCancel={() => setEditShiftId(null)} saving={saving} employees={employees} />
                   ) : (
                     <div className="flex items-start justify-between gap-3">
                       <div className="flex-1">
