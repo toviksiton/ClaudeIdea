@@ -1,7 +1,7 @@
 'use client'
 
-import { useEffect, useState, useCallback, useRef } from 'react'
-import { ShoppingBag, X, Plus, Minus, Search, ChevronRight, Phone, MessageSquare, SlidersHorizontal, CheckCircle2, AlertCircle, Clock } from 'lucide-react'
+import { useEffect, useState, useCallback } from 'react'
+import { X, Plus, Minus, Search, Phone, CheckCircle2, AlertCircle, Clock, ShoppingCart } from 'lucide-react'
 import PaymentModal from '@/components/PaymentModal'
 
 interface Ingredient { ingredient: { name: string }; quantity: number }
@@ -13,7 +13,8 @@ interface MenuItem {
 interface CartItem { menuItem: MenuItem; quantity: number; notes: string }
 interface Settings {
   business_name?: string; business_phone?: string; paybox_link?: string
-  bit_phone?: string; event_active?: string; [key: string]: string | undefined
+  bit_phone?: string; event_active?: string; logo_url?: string
+  [key: string]: string | undefined
 }
 
 const EMOJI_MAP: Record<string, string> = {
@@ -45,8 +46,6 @@ export default function CustomerPage() {
   const [trackOrderId, setTrackOrderId] = useState('')
   const [trackedOrder, setTrackedOrder] = useState<any>(null)
   const [trackError, setTrackError] = useState('')
-  const categoryRefs = useRef<Record<string, HTMLDivElement | null>>({})
-  const scrollTimeout = useRef<any>(null)
 
   const fetchMenu = useCallback(async () => {
     try {
@@ -87,7 +86,6 @@ export default function CustomerPage() {
     return matchCat && matchSearch
   })
 
-  // Group by category when showing all
   const grouped: Record<string, MenuItem[]> = {}
   filteredItems.forEach((item) => {
     if (!grouped[item.category]) grouped[item.category] = []
@@ -143,79 +141,81 @@ export default function CustomerPage() {
     } catch { setTrackError('שגיאה') }
   }
 
+  const STATUS_LABELS: Record<string, string> = { PENDING: 'ממתין', CONFIRMED: 'אושר', PREPARING: 'בהכנה', READY: 'מוכן לאיסוף', COMPLETED: 'הושלם', CANCELLED: 'בוטל' }
+  const STATUS_COLORS: Record<string, string> = { PENDING: 'text-amber-600 bg-amber-50', CONFIRMED: 'text-blue-600 bg-blue-50', PREPARING: 'text-orange-600 bg-orange-50', READY: 'text-green-600 bg-green-50', COMPLETED: 'text-gray-500 bg-gray-50', CANCELLED: 'text-red-600 bg-red-50' }
+
   if (settings.event_active === 'false') {
     return (
-      <div className="min-h-screen bg-zinc-950 flex items-center justify-center p-6">
+      <div className="min-h-screen bg-gray-50 flex items-center justify-center p-6" dir="rtl">
         <div className="text-center">
-          <div className="w-20 h-20 bg-zinc-800 rounded-3xl flex items-center justify-center mx-auto mb-6 overflow-hidden">
+          <div className="w-20 h-20 bg-white rounded-3xl flex items-center justify-center mx-auto mb-6 shadow-sm overflow-hidden border border-gray-100">
             {settings.logo_url ? (
-              <img src={settings.logo_url} alt="לוגו" className="w-full h-full object-contain p-1" />
+              <img src={settings.logo_url} alt="לוגו" className="w-full h-full object-contain p-2" />
             ) : (
               <span className="text-4xl">🍽️</span>
             )}
           </div>
-          <h1 className="text-3xl font-bold text-white mb-2">{settings.business_name || 'מטבח הכפר'}</h1>
-          <p className="text-zinc-400">האירוע אינו פעיל כרגע. נשוב בקרוב!</p>
+          <h1 className="text-2xl font-bold text-gray-800 mb-2">{settings.business_name || 'מטבח הכפר'}</h1>
+          <p className="text-gray-500">האירוע אינו פעיל כרגע. נשוב בקרוב!</p>
         </div>
       </div>
     )
   }
 
-  const STATUS_LABELS: Record<string, string> = { PENDING: 'ממתין', CONFIRMED: 'אושר', PREPARING: 'בהכנה', READY: 'מוכן לאיסוף', COMPLETED: 'הושלם', CANCELLED: 'בוטל' }
-  const STATUS_COLORS: Record<string, string> = { PENDING: 'text-amber-400 bg-amber-400/10', CONFIRMED: 'text-blue-400 bg-blue-400/10', PREPARING: 'text-orange-400 bg-orange-400/10', READY: 'text-green-400 bg-green-400/10', COMPLETED: 'text-zinc-400 bg-zinc-400/10', CANCELLED: 'text-red-400 bg-red-400/10' }
-
   return (
-    <div className="min-h-screen bg-zinc-950 text-white" dir="rtl" style={{ fontFamily: "'Heebo', sans-serif" }}>
+    <div className="min-h-screen bg-gray-50 text-gray-800" dir="rtl">
 
-      {/* ── Hero Header ────────────────────────────────────── */}
-      <div className="relative overflow-hidden bg-zinc-900 px-5 pt-10 pb-8">
-        <div className="absolute inset-0 opacity-5" style={{ backgroundImage: 'radial-gradient(circle at 20% 50%, #f97316 0%, transparent 60%), radial-gradient(circle at 80% 20%, #fb923c 0%, transparent 50%)' }} />
-        <div className="relative">
-          <div className="flex items-center justify-between mb-6">
-            <div className="flex items-center gap-3">
-              {settings.logo_url ? (
-                <div className="w-12 h-12 rounded-2xl overflow-hidden bg-zinc-800 shrink-0">
-                  <img src={settings.logo_url} alt="לוגו" className="w-full h-full object-contain p-1" />
-                </div>
-              ) : null}
-              <div>
-                <p className="text-zinc-400 text-sm mb-0.5">ברוך הבא אל</p>
-                <h1 className="text-2xl font-bold text-white">{settings.business_name || 'מטבח הכפר'}</h1>
+      {/* ── Header ─────────────────────────────────────────── */}
+      <header className="bg-white border-b border-gray-200 px-4 pt-5 pb-4 sticky top-0 z-20 shadow-sm">
+        <div className="flex items-center justify-between mb-3">
+          <div className="flex items-center gap-2.5">
+            {settings.logo_url && (
+              <div className="w-9 h-9 rounded-xl overflow-hidden bg-gray-100 shrink-0 border border-gray-200">
+                <img src={settings.logo_url} alt="לוגו" className="w-full h-full object-contain p-0.5" />
               </div>
-            </div>
+            )}
+            <h1 className="text-lg font-bold text-gray-800">{settings.business_name || 'מטבח הכפר'}</h1>
+          </div>
+          <div className="flex items-center gap-2">
             {settings.business_phone && (
-              <a href={`tel:${settings.business_phone}`} className="w-10 h-10 bg-zinc-800 rounded-2xl flex items-center justify-center text-zinc-300 hover:text-orange-400 transition-colors">
-                <Phone size={18} />
+              <a href={`tel:${settings.business_phone}`} className="w-9 h-9 bg-gray-100 rounded-xl flex items-center justify-center text-gray-500 hover:text-orange-500 transition-colors">
+                <Phone size={16} />
               </a>
             )}
-          </div>
-          {/* Search */}
-          <div className="relative">
-            <Search size={16} className="absolute right-3.5 top-1/2 -translate-y-1/2 text-zinc-500" />
-            <input
-              placeholder="חיפוש מנה..."
-              value={search}
-              onChange={(e) => setSearch(e.target.value)}
-              className="w-full bg-zinc-800 border border-zinc-700 rounded-2xl pr-10 pl-4 py-3 text-white placeholder-zinc-500 text-sm focus:outline-none focus:border-orange-500 transition-colors"
-            />
+            <button onClick={() => setCartOpen(true)} className="relative w-9 h-9 bg-gray-100 rounded-xl flex items-center justify-center text-gray-500 hover:text-orange-500 transition-colors">
+              <ShoppingCart size={16} />
+              {totalItems > 0 && (
+                <span className="absolute -top-1 -left-1 bg-orange-500 text-white text-xs w-4 h-4 rounded-full flex items-center justify-center font-bold">{totalItems}</span>
+              )}
+            </button>
           </div>
         </div>
-      </div>
+        {/* Search */}
+        <div className="relative">
+          <Search size={15} className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400" />
+          <input
+            placeholder="חיפוש מנה..."
+            value={search}
+            onChange={(e) => setSearch(e.target.value)}
+            className="w-full bg-gray-100 rounded-xl pr-9 pl-3 py-2.5 text-sm text-gray-800 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-orange-300"
+          />
+        </div>
+      </header>
 
       {/* ── Category Tabs ───────────────────────────────────── */}
-      <div className="sticky top-0 z-20 bg-zinc-950/95 backdrop-blur-sm border-b border-zinc-800/50 px-4 py-3">
+      <div className="bg-white border-b border-gray-100 px-4 py-2">
         <div className="flex gap-2 overflow-x-auto scrollbar-hide">
           {['הכל', ...categories].map((cat) => (
             <button
               key={cat}
               onClick={() => { setActiveCategory(cat); setSearch('') }}
-              className={`flex items-center gap-1.5 px-4 py-2 rounded-2xl text-sm font-medium whitespace-nowrap transition-all ${
+              className={`flex items-center gap-1 px-3 py-1.5 rounded-xl text-sm font-medium whitespace-nowrap transition-all ${
                 activeCategory === cat
-                  ? 'bg-orange-500 text-white shadow-lg shadow-orange-500/25'
-                  : 'bg-zinc-800 text-zinc-400 hover:bg-zinc-700 hover:text-white'
+                  ? 'bg-orange-500 text-white'
+                  : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
               }`}
             >
-              <span>{categoryEmoji(cat)}</span>
+              <span className="text-xs">{categoryEmoji(cat)}</span>
               <span>{cat}</span>
             </button>
           ))}
@@ -224,72 +224,73 @@ export default function CustomerPage() {
 
       {/* ── Success banner ──────────────────────────────────── */}
       {placedOrder && !showPayment && (
-        <div className="mx-4 mt-4 bg-green-500/15 border border-green-500/30 rounded-2xl p-4 flex items-center gap-3">
-          <CheckCircle2 size={20} className="text-green-400 shrink-0" />
+        <div className="mx-4 mt-3 bg-green-50 border border-green-200 rounded-xl p-3 flex items-center gap-2.5">
+          <CheckCircle2 size={18} className="text-green-500 shrink-0" />
           <div className="flex-1">
-            <p className="text-green-300 font-semibold text-sm">הזמנה #{placedOrder.id} נקלטה!</p>
-            <p className="text-green-400/70 text-xs">שמור את מספר ההזמנה למעקב</p>
+            <p className="text-green-700 font-semibold text-sm">הזמנה #{placedOrder.id} נקלטה!</p>
+            <p className="text-green-600 text-xs">שמור את מספר ההזמנה למעקב</p>
           </div>
-          <button onClick={() => setPlacedOrder(null)} className="text-green-500 hover:text-green-300"><X size={16} /></button>
+          <button onClick={() => setPlacedOrder(null)} className="text-green-400 hover:text-green-600"><X size={14} /></button>
         </div>
       )}
 
       {/* ── Menu ────────────────────────────────────────────── */}
-      <main className="px-4 py-5 pb-36">
+      <main className="px-4 py-4 pb-32">
         {loading ? (
-          <div className="flex flex-col items-center justify-center py-20 gap-3">
-            <div className="w-10 h-10 border-2 border-orange-500 border-t-transparent rounded-full animate-spin" />
-            <p className="text-zinc-500 text-sm">טוען תפריט...</p>
+          <div className="flex items-center justify-center py-16 gap-2 text-gray-400">
+            <div className="w-5 h-5 border-2 border-orange-400 border-t-transparent rounded-full animate-spin" />
+            <span className="text-sm">טוען תפריט...</span>
           </div>
         ) : filteredItems.length === 0 ? (
-          <div className="text-center py-20 text-zinc-600">
-            <p className="text-4xl mb-3">🔍</p>
-            <p>לא נמצאו פריטים</p>
+          <div className="text-center py-16 text-gray-400">
+            <p className="text-3xl mb-2">🔍</p>
+            <p className="text-sm">לא נמצאו פריטים</p>
           </div>
         ) : activeCategory === 'הכל' && !search ? (
-          // Grouped view
           Object.entries(grouped).map(([cat, items]) => (
-            <div key={cat} ref={(el) => { categoryRefs.current[cat] = el }} className="mb-8">
-              <div className="flex items-center gap-2 mb-4">
-                <span className="text-xl">{categoryEmoji(cat)}</span>
-                <h2 className="font-bold text-white text-lg">{cat}</h2>
-                <div className="flex-1 h-px bg-zinc-800 mr-2" />
+            <div key={cat} className="mb-5">
+              <div className="flex items-center gap-2 mb-2 px-1">
+                <span className="text-base">{categoryEmoji(cat)}</span>
+                <h2 className="font-bold text-gray-700 text-sm uppercase tracking-wide">{cat}</h2>
               </div>
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                {items.map((item) => <MenuCard key={item.id} item={item} cart={cart} onAdd={addToCart} onUpdate={updateQty} />)}
+              <div className="bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden divide-y divide-gray-50">
+                {items.map((item) => (
+                  <MenuItem key={item.id} item={item} cart={cart} onAdd={addToCart} onUpdate={updateQty} />
+                ))}
               </div>
             </div>
           ))
         ) : (
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-            {filteredItems.map((item) => <MenuCard key={item.id} item={item} cart={cart} onAdd={addToCart} onUpdate={updateQty} />)}
+          <div className="bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden divide-y divide-gray-50">
+            {filteredItems.map((item) => (
+              <MenuItem key={item.id} item={item} cart={cart} onAdd={addToCart} onUpdate={updateQty} />
+            ))}
           </div>
         )}
 
         {/* ── Order Tracking ───────────────────────────────── */}
-        <div className="mt-6 bg-zinc-900 rounded-3xl border border-zinc-800 p-5">
-          <h2 className="font-bold text-white mb-3 text-base">מעקב הזמנה</h2>
+        <div className="mt-5 bg-white rounded-2xl border border-gray-100 shadow-sm p-4">
+          <h2 className="font-bold text-gray-700 text-sm mb-3">מעקב הזמנה</h2>
           <div className="flex gap-2">
-            <input type="number" placeholder="מספר הזמנה" value={trackOrderId} onChange={(e) => setTrackOrderId(e.target.value)}
+            <input type="number" placeholder="מספר הזמנה" value={trackOrderId}
+              onChange={(e) => setTrackOrderId(e.target.value)}
               onKeyDown={(e) => e.key === 'Enter' && trackOrder()}
-              className="flex-1 bg-zinc-800 border border-zinc-700 rounded-2xl px-4 py-2.5 text-white placeholder-zinc-500 text-sm focus:outline-none focus:border-orange-500" />
-            <button onClick={trackOrder} className="bg-orange-500 hover:bg-orange-400 text-white px-5 py-2.5 rounded-2xl text-sm font-medium transition-colors">
-              חפש
-            </button>
+              className="flex-1 bg-gray-100 rounded-xl px-3 py-2.5 text-sm text-gray-800 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-orange-300" />
+            <button onClick={trackOrder} className="bg-orange-500 hover:bg-orange-600 text-white px-4 py-2.5 rounded-xl text-sm font-medium transition-colors">חפש</button>
           </div>
-          {trackError && <p className="text-red-400 text-sm mt-2">{trackError}</p>}
+          {trackError && <p className="text-red-500 text-xs mt-2">{trackError}</p>}
           {trackedOrder && (
-            <div className="mt-3 bg-zinc-800 rounded-2xl p-4">
-              <div className="flex items-center gap-2 mb-3">
-                <span className="font-bold text-white">#{trackedOrder.id}</span>
-                <span className={`text-xs px-2.5 py-0.5 rounded-full font-medium ${STATUS_COLORS[trackedOrder.status]}`}>
+            <div className="mt-3 bg-gray-50 rounded-xl p-3">
+              <div className="flex items-center gap-2 mb-2">
+                <span className="font-bold text-gray-700 text-sm">#{trackedOrder.id}</span>
+                <span className={`text-xs px-2 py-0.5 rounded-full font-medium ${STATUS_COLORS[trackedOrder.status]}`}>
                   {STATUS_LABELS[trackedOrder.status]}
                 </span>
               </div>
               {trackedOrder.items.map((item: any) => (
-                <p key={item.id} className="text-zinc-400 text-sm">{item.quantity}× {item.menuItem.name}</p>
+                <p key={item.id} className="text-gray-500 text-xs">{item.quantity}× {item.menuItem.name}</p>
               ))}
-              <p className="text-orange-400 font-bold mt-2">₪{trackedOrder.totalAmount}</p>
+              <p className="text-orange-500 font-bold text-sm mt-2">₪{trackedOrder.totalAmount}</p>
             </div>
           )}
         </div>
@@ -299,12 +300,10 @@ export default function CustomerPage() {
       {totalItems > 0 && !cartOpen && (
         <div className="fixed bottom-5 right-4 left-4 z-40">
           <button onClick={() => setCartOpen(true)}
-            className="w-full bg-orange-500 hover:bg-orange-400 text-white rounded-3xl px-5 py-4 flex items-center justify-between shadow-2xl shadow-orange-500/40 transition-all active:scale-98">
-            <div className="bg-white/20 rounded-2xl w-8 h-8 flex items-center justify-center text-sm font-bold">
-              {totalItems}
-            </div>
-            <span className="font-bold text-base">צפה בעגלה</span>
-            <span className="font-bold text-lg">₪{totalPrice.toFixed(0)}</span>
+            className="w-full bg-orange-500 hover:bg-orange-600 text-white rounded-2xl px-5 py-3.5 flex items-center justify-between shadow-xl shadow-orange-500/30 transition-all">
+            <span className="bg-white/20 rounded-xl w-7 h-7 flex items-center justify-center text-sm font-bold">{totalItems}</span>
+            <span className="font-bold">צפה בעגלה</span>
+            <span className="font-bold">₪{totalPrice.toFixed(0)}</span>
           </button>
         </div>
       )}
@@ -312,83 +311,77 @@ export default function CustomerPage() {
       {/* ── Cart Sheet ──────────────────────────────────────── */}
       {cartOpen && (
         <div className="fixed inset-0 z-50 flex flex-col" dir="rtl">
-          <div className="flex-1 bg-black/60 backdrop-blur-sm" onClick={() => setCartOpen(false)} />
-          <div className="bg-zinc-900 rounded-t-3xl border-t border-zinc-800 max-h-[90vh] flex flex-col">
-            {/* Handle */}
+          <div className="flex-1 bg-black/30" onClick={() => setCartOpen(false)} />
+          <div className="bg-white rounded-t-3xl max-h-[92vh] flex flex-col shadow-2xl">
             <div className="flex justify-center pt-3 pb-1">
-              <div className="w-10 h-1 bg-zinc-700 rounded-full" />
+              <div className="w-8 h-1 bg-gray-200 rounded-full" />
             </div>
 
-            <div className="flex items-center justify-between px-5 py-3 border-b border-zinc-800">
-              <h2 className="font-bold text-xl text-white">ההזמנה שלי</h2>
-              <button onClick={() => setCartOpen(false)} className="w-8 h-8 bg-zinc-800 rounded-full flex items-center justify-center text-zinc-400 hover:text-white">
-                <X size={16} />
+            <div className="flex items-center justify-between px-5 py-3 border-b border-gray-100">
+              <h2 className="font-bold text-lg text-gray-800">ההזמנה שלי</h2>
+              <button onClick={() => setCartOpen(false)} className="w-8 h-8 bg-gray-100 rounded-full flex items-center justify-center text-gray-500 hover:text-gray-700">
+                <X size={15} />
               </button>
             </div>
 
-            <div className="overflow-y-auto flex-1 px-5 py-4 space-y-3">
+            <div className="overflow-y-auto flex-1 px-5 py-3 space-y-2">
               {cart.map((c) => (
-                <div key={c.menuItem.id} className="bg-zinc-800 rounded-2xl p-4">
-                  <div className="flex items-start justify-between gap-3 mb-3">
+                <div key={c.menuItem.id} className="bg-gray-50 rounded-xl p-3">
+                  <div className="flex items-start justify-between gap-2 mb-2">
                     <div className="flex-1">
-                      <p className="font-semibold text-white">{c.menuItem.name}</p>
-                      <p className="text-orange-400 font-bold">₪{(c.menuItem.price * c.quantity).toFixed(0)}</p>
+                      <p className="font-semibold text-gray-800 text-sm">{c.menuItem.name}</p>
+                      <p className="text-orange-500 font-bold text-sm">₪{(c.menuItem.price * c.quantity).toFixed(0)}</p>
                     </div>
-                    <button onClick={() => removeFromCart(c.menuItem.id)} className="text-zinc-600 hover:text-red-400 transition-colors"><X size={15} /></button>
+                    <button onClick={() => removeFromCart(c.menuItem.id)} className="text-gray-300 hover:text-red-400 transition-colors mt-0.5"><X size={14} /></button>
                   </div>
-                  <div className="flex items-center gap-3 mb-3">
-                    <button onClick={() => updateQty(c.menuItem.id, -1)} className="w-8 h-8 bg-zinc-700 hover:bg-zinc-600 rounded-xl flex items-center justify-center transition-colors">
-                      <Minus size={14} className="text-white" />
+                  <div className="flex items-center gap-2 mb-2">
+                    <button onClick={() => updateQty(c.menuItem.id, -1)} className="w-7 h-7 bg-white border border-gray-200 rounded-lg flex items-center justify-center">
+                      <Minus size={12} className="text-gray-600" />
                     </button>
-                    <span className="font-bold text-white w-6 text-center">{c.quantity}</span>
-                    <button onClick={() => updateQty(c.menuItem.id, 1)} disabled={c.quantity >= c.menuItem.maxQuantity} className="w-8 h-8 bg-orange-500 hover:bg-orange-400 disabled:opacity-30 rounded-xl flex items-center justify-center transition-colors">
-                      <Plus size={14} className="text-white" />
+                    <span className="font-bold text-gray-800 w-5 text-center text-sm">{c.quantity}</span>
+                    <button onClick={() => updateQty(c.menuItem.id, 1)} disabled={c.quantity >= c.menuItem.maxQuantity}
+                      className="w-7 h-7 bg-orange-500 hover:bg-orange-600 disabled:opacity-30 rounded-lg flex items-center justify-center transition-colors">
+                      <Plus size={12} className="text-white" />
                     </button>
                   </div>
                   <input placeholder="הערות לפריט..." value={c.notes} onChange={(e) => updateNotes(c.menuItem.id, e.target.value)}
-                    className="w-full bg-zinc-700/50 border border-zinc-700 rounded-xl px-3 py-2 text-sm text-zinc-300 placeholder-zinc-500 focus:outline-none focus:border-orange-500" />
+                    className="w-full bg-white border border-gray-200 rounded-lg px-3 py-1.5 text-xs text-gray-700 placeholder-gray-400 focus:outline-none focus:ring-1 focus:ring-orange-300" />
                 </div>
               ))}
             </div>
 
-            <div className="px-5 py-4 border-t border-zinc-800 space-y-4">
-              {/* Customer info */}
-              <div className="grid grid-cols-2 gap-3">
-                <div className="relative">
-                  <input placeholder="שם מלא *" value={customerName} onChange={(e) => setCustomerName(e.target.value)}
-                    className="w-full bg-zinc-800 border border-zinc-700 rounded-2xl px-4 py-3 text-white placeholder-zinc-500 text-sm focus:outline-none focus:border-orange-500" />
-                </div>
-                <div className="relative">
-                  <input placeholder="טלפון *" type="tel" value={customerPhone} onChange={(e) => setCustomerPhone(e.target.value)}
-                    className="w-full bg-zinc-800 border border-zinc-700 rounded-2xl px-4 py-3 text-white placeholder-zinc-500 text-sm focus:outline-none focus:border-orange-500" />
-                </div>
+            <div className="px-5 py-4 border-t border-gray-100 space-y-3">
+              <div className="grid grid-cols-2 gap-2">
+                <input placeholder="שם מלא *" value={customerName} onChange={(e) => setCustomerName(e.target.value)}
+                  className="bg-gray-50 border border-gray-200 rounded-xl px-3 py-2.5 text-sm text-gray-800 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-orange-300" />
+                <input placeholder="טלפון *" type="tel" value={customerPhone} onChange={(e) => setCustomerPhone(e.target.value)}
+                  className="bg-gray-50 border border-gray-200 rounded-xl px-3 py-2.5 text-sm text-gray-800 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-orange-300" />
               </div>
               <input placeholder="הערות להזמנה..." value={orderNotes} onChange={(e) => setOrderNotes(e.target.value)}
-                className="w-full bg-zinc-800 border border-zinc-700 rounded-2xl px-4 py-3 text-white placeholder-zinc-500 text-sm focus:outline-none focus:border-orange-500" />
+                className="w-full bg-gray-50 border border-gray-200 rounded-xl px-3 py-2.5 text-sm text-gray-800 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-orange-300" />
 
-              {/* Payment */}
               <div className="grid grid-cols-3 gap-2">
                 {(['CASH', 'PAYBOX', 'BIT'] as const).map((m) => (
                   <button key={m} onClick={() => setPaymentMethod(m)}
-                    className={`py-2.5 rounded-2xl text-sm font-medium transition-all ${paymentMethod === m ? 'bg-orange-500 text-white shadow-lg shadow-orange-500/25' : 'bg-zinc-800 text-zinc-400 hover:bg-zinc-700 hover:text-white border border-zinc-700'}`}>
+                    className={`py-2 rounded-xl text-sm font-medium transition-all ${paymentMethod === m ? 'bg-orange-500 text-white' : 'bg-gray-100 text-gray-600 hover:bg-gray-200 border border-gray-200'}`}>
                     {m === 'CASH' ? '💵 מזומן' : m === 'PAYBOX' ? '💳 Paybox' : '📱 Bit'}
                   </button>
                 ))}
               </div>
 
               {error && (
-                <div className="flex items-center gap-2 text-red-400 text-sm bg-red-500/10 border border-red-500/20 rounded-2xl p-3">
-                  <AlertCircle size={15} /> {error}
+                <div className="flex items-center gap-2 text-red-500 text-sm bg-red-50 rounded-xl p-2.5">
+                  <AlertCircle size={14} /> {error}
                 </div>
               )}
 
               <div className="flex items-center justify-between">
-                <span className="text-zinc-400">סה״כ</span>
-                <span className="font-bold text-white text-xl">₪{totalPrice.toFixed(0)}</span>
+                <span className="text-gray-500 text-sm">סה״כ</span>
+                <span className="font-bold text-gray-800 text-xl">₪{totalPrice.toFixed(0)}</span>
               </div>
 
               <button onClick={placeOrder} disabled={submitting}
-                className="w-full bg-orange-500 hover:bg-orange-400 disabled:opacity-50 text-white py-4 rounded-2xl font-bold text-base transition-all shadow-lg shadow-orange-500/25 active:scale-98">
+                className="w-full bg-orange-500 hover:bg-orange-600 disabled:opacity-50 text-white py-3.5 rounded-xl font-bold transition-all shadow-md shadow-orange-500/20">
                 {submitting ? 'שולח...' : 'שלח הזמנה →'}
               </button>
             </div>
@@ -396,7 +389,6 @@ export default function CustomerPage() {
         </div>
       )}
 
-      {/* Payment Modal */}
       {showPayment && placedOrder && (
         <PaymentModal order={placedOrder} settings={settings} onClose={() => { setShowPayment(false); setPlacedOrder(null) }} />
       )}
@@ -404,8 +396,8 @@ export default function CustomerPage() {
   )
 }
 
-// ── Menu Card Component ──────────────────────────────────────
-function MenuCard({ item, cart, onAdd, onUpdate }: {
+// ── Compact Menu Item Row ────────────────────────────────────
+function MenuItem({ item, cart, onAdd, onUpdate }: {
   item: MenuItem; cart: CartItem[]
   onAdd: (i: MenuItem) => void; onUpdate: (id: number, delta: number) => void
 }) {
@@ -413,50 +405,53 @@ function MenuCard({ item, cart, onAdd, onUpdate }: {
   const unavailable = !item.isAvailable || item.maxQuantity === 0
 
   return (
-    <div className={`bg-zinc-900 rounded-3xl border transition-all overflow-hidden ${
-      unavailable ? 'border-zinc-800 opacity-50' : 'border-zinc-800 hover:border-zinc-700'
-    }`}>
-      {/* Emoji / color header */}
-      <div className="h-28 bg-gradient-to-br from-zinc-800 to-zinc-900 flex items-center justify-center relative overflow-hidden">
-        <span className="text-5xl">{categoryEmoji(item.category)}</span>
-        {unavailable && (
-          <div className="absolute inset-0 bg-zinc-950/80 flex items-center justify-center">
-            <span className="bg-red-500/20 text-red-400 text-xs font-bold px-3 py-1 rounded-full border border-red-500/30">אזל המלאי</span>
-          </div>
-        )}
-        {!unavailable && item.maxQuantity <= 5 && (
-          <div className="absolute top-2 left-2">
-            <span className="bg-amber-500/20 text-amber-400 text-xs font-bold px-2 py-0.5 rounded-full border border-amber-500/30">נותרו {item.maxQuantity}</span>
-          </div>
-        )}
+    <div className={`flex items-center gap-3 px-4 py-3 transition-colors ${unavailable ? 'opacity-50' : 'hover:bg-gray-50'}`}>
+      {/* Emoji */}
+      <div className="w-10 h-10 bg-orange-50 rounded-xl flex items-center justify-center shrink-0 text-xl">
+        {categoryEmoji(item.category)}
       </div>
 
-      <div className="p-4">
-        <h3 className="font-bold text-white text-base leading-tight mb-1">{item.name}</h3>
-        {item.description && <p className="text-zinc-500 text-xs mb-2 line-clamp-2">{item.description}</p>}
-        {item.prepTimeMinutes > 0 && (
-          <p className="text-zinc-600 text-xs mb-2 flex items-center gap-1"><Clock size={10} /> {item.prepTimeMinutes} דקות</p>
+      {/* Info */}
+      <div className="flex-1 min-w-0">
+        <p className="font-semibold text-gray-800 text-sm leading-tight">{item.name}</p>
+        {item.description && (
+          <p className="text-gray-400 text-xs mt-0.5 line-clamp-1">{item.description}</p>
         )}
-        <div className="flex items-center justify-between mt-3">
-          <span className="text-orange-400 font-bold text-lg">₪{item.price}</span>
-          {unavailable ? null : cartQty === 0 ? (
-            <button onClick={() => onAdd(item)}
-              className="w-8 h-8 bg-orange-500 hover:bg-orange-400 rounded-xl flex items-center justify-center transition-all active:scale-95 shadow-md shadow-orange-500/30">
-              <Plus size={16} className="text-white" />
-            </button>
-          ) : (
-            <div className="flex items-center gap-2">
-              <button onClick={() => onUpdate(item.id, -1)} className="w-7 h-7 bg-zinc-800 hover:bg-zinc-700 rounded-lg flex items-center justify-center">
-                <Minus size={12} className="text-zinc-300" />
-              </button>
-              <span className="font-bold text-white text-sm w-5 text-center">{cartQty}</span>
-              <button onClick={() => onUpdate(item.id, 1)} disabled={cartQty >= item.maxQuantity}
-                className="w-7 h-7 bg-orange-500 hover:bg-orange-400 disabled:opacity-30 rounded-lg flex items-center justify-center">
-                <Plus size={12} className="text-white" />
-              </button>
-            </div>
+        <div className="flex items-center gap-2 mt-0.5">
+          <span className="text-orange-500 font-bold text-sm">₪{item.price}</span>
+          {item.prepTimeMinutes > 0 && (
+            <span className="text-gray-400 text-xs flex items-center gap-0.5"><Clock size={9} />{item.prepTimeMinutes}′</span>
+          )}
+          {unavailable && (
+            <span className="text-red-400 text-xs font-medium">אזל המלאי</span>
+          )}
+          {!unavailable && item.maxQuantity <= 5 && (
+            <span className="text-amber-500 text-xs">נותרו {item.maxQuantity}</span>
           )}
         </div>
+      </div>
+
+      {/* Add / qty */}
+      <div className="shrink-0">
+        {unavailable ? (
+          <div className="w-8 h-8" />
+        ) : cartQty === 0 ? (
+          <button onClick={() => onAdd(item)}
+            className="w-8 h-8 bg-orange-500 hover:bg-orange-600 rounded-xl flex items-center justify-center transition-colors shadow-sm shadow-orange-500/30">
+            <Plus size={15} className="text-white" />
+          </button>
+        ) : (
+          <div className="flex items-center gap-1.5">
+            <button onClick={() => onUpdate(item.id, -1)} className="w-7 h-7 bg-gray-100 hover:bg-gray-200 rounded-lg flex items-center justify-center">
+              <Minus size={11} className="text-gray-600" />
+            </button>
+            <span className="font-bold text-gray-800 text-sm w-4 text-center">{cartQty}</span>
+            <button onClick={() => onUpdate(item.id, 1)} disabled={cartQty >= item.maxQuantity}
+              className="w-7 h-7 bg-orange-500 hover:bg-orange-600 disabled:opacity-30 rounded-lg flex items-center justify-center transition-colors">
+              <Plus size={11} className="text-white" />
+            </button>
+          </div>
+        )}
       </div>
     </div>
   )
