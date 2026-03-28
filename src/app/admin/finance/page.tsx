@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from 'react'
 import Link from 'next/link'
-import { TrendingUp, TrendingDown, ShoppingCart, Receipt, Users, DollarSign, RefreshCw } from 'lucide-react'
+import { TrendingUp, TrendingDown, ShoppingCart, Receipt, Users, DollarSign, RefreshCw, Calculator } from 'lucide-react'
 
 interface Summary {
   totalRevenue: number; vatFromRevenue: number; revenueBeforeVat: number
@@ -154,7 +154,7 @@ export default function FinancePage() {
           </div>
 
           {/* Quick links */}
-          <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+          <div className="grid grid-cols-1 sm:grid-cols-4 gap-3">
             <Link href="/admin/finance/purchases"
               className="bg-white hover:bg-orange-50 border rounded-2xl p-4 flex items-center gap-3 transition-colors group">
               <div className="bg-orange-100 p-3 rounded-xl"><ShoppingCart size={20} className="text-orange-600" /></div>
@@ -177,6 +177,14 @@ export default function FinancePage() {
               <div>
                 <p className="font-bold text-gray-800">ספקים</p>
                 <p className="text-xs text-gray-500">ניהול רשימת ספקים</p>
+              </div>
+            </Link>
+            <Link href="/admin/finance/simulator"
+              className="bg-white hover:bg-green-50 border rounded-2xl p-4 flex items-center gap-3 transition-colors group">
+              <div className="bg-green-100 p-3 rounded-xl"><Calculator size={20} className="text-green-600" /></div>
+              <div>
+                <p className="font-bold text-gray-800">סימולטור רווחים</p>
+                <p className="text-xs text-gray-500">מה נשאר לבעלים?</p>
               </div>
             </Link>
           </div>

@@ -136,3 +136,56 @@ model Setting {
   key   String @unique
   value String
 }
+
+// עובדים
+// role: CHEF | KITCHEN | DELIVERY | OTHER
+// status: ACTIVE | INACTIVE
+model Employee {
+  id           Int      @id @default(autoincrement())
+  name         String
+  phone        String?
+  role         String   @default("KITCHEN")
+  hourlyRate   Float    @default(0)
+  status       String   @default("ACTIVE")
+  referredById Int?     // מי הביא אותו (חבר מביא חבר)
+  referralBonus Float   @default(0) // בונוס שמגיע לממליץ
+  notes        String?
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  referredBy       Employee?        @relation("Referrals", fields: [referredById], references: [id])
+  referrals        Employee[]       @relation("Referrals")
+  shiftAssignments ShiftAssignment[]
+}
+
+// משמרות
+// status: PLANNED | ACTIVE | COMPLETED | CANCELLED
+model Shift {
+  id        Int      @id @default(autoincrement())
+  date      DateTime
+  startTime String   // "09:00"
+  endTime   String   // "17:00"
+  notes     String?
+  status    String   @default("PLANNED")
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  assignments ShiftAssignment[]
+}
+
+// שיבוץ עובד למשמרת
+model ShiftAssignment {
+  id          Int     @id @default(autoincrement())
+  shiftId     Int
+  employeeId  Int
+  role        String  // CHEF | KITCHEN | DELIVERY
+  hours       Float   @default(0)
+  hourlyRate  Float   @default(0)
+  bonus       Float   @default(0)
+  notes       String?
+
+  shift    Shift    @relation(fields: [shiftId], references: [id], onDelete: Cascade)
+  employee Employee @relation(fields: [employeeId], references: [id])
+
+  @@unique([shiftId, employeeId])
+}
