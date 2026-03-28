@@ -1,0 +1,92 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+// חומרי גלם / מרכיבים
+model Ingredient {
+  id          Int      @id @default(autoincrement())
+  name        String
+  unit        String   // יחידת מדידה: יח', גרם, מ"ל וכו'
+  quantity    Float    @default(0) // כמות במלאי
+  alertLevel  Float    @default(5) // התראה כשהמלאי נמוך מרמה זו
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  menuItemIngredients MenuItemIngredient[]
+}
+
+// פריטי תפריט
+model MenuItem {
+  id          Int      @id @default(autoincrement())
+  name        String
+  description String?
+  price       Float
+  imageUrl    String?
+  category    String   @default("כללי")
+  isActive    Boolean  @default(true)  // האם מופיע בתפריט
+  isAvailable Boolean  @default(true)  // האם זמין (מלאי)
+  sortOrder   Int      @default(0)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  ingredients MenuItemIngredient[]
+  orderItems  OrderItem[]
+}
+
+// קישור בין פריט תפריט למרכיבים
+model MenuItemIngredient {
+  id           Int    @id @default(autoincrement())
+  menuItemId   Int
+  ingredientId Int
+  quantity     Float  // כמות הנדרשת לפריט אחד
+
+  menuItem   MenuItem   @relation(fields: [menuItemId], references: [id], onDelete: Cascade)
+  ingredient Ingredient @relation(fields: [ingredientId], references: [id], onDelete: Cascade)
+
+  @@unique([menuItemId, ingredientId])
+}
+
+// הזמנות
+// status: PENDING | CONFIRMED | PREPARING | READY | COMPLETED | CANCELLED
+// paymentMethod: PAYBOX | BIT | CASH
+// paymentStatus: PENDING | PAID | FAILED | REFUNDED
+model Order {
+  id            Int      @id @default(autoincrement())
+  customerName  String
+  customerPhone String
+  notes         String?
+  status        String   @default("PENDING")
+  paymentMethod String
+  paymentStatus String   @default("PENDING")
+  paymentRef    String?  // מזהה עסקה מ-Paybox/Bit
+  totalAmount   Float
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  items OrderItem[]
+}
+
+// פריטים בהזמנה
+model OrderItem {
+  id         Int    @id @default(autoincrement())
+  orderId    Int
+  menuItemId Int
+  quantity   Int
+  priceEach  Float
+  notes      String?
+
+  order    Order    @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  menuItem MenuItem @relation(fields: [menuItemId], references: [id])
+}
+
+// הגדרות מערכת
+model Setting {
+  id    Int    @id @default(autoincrement())
+  key   String @unique
+  value String
+}
