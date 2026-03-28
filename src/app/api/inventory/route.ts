@@ -7,9 +7,8 @@ export async function GET() {
     const ingredients = await prisma.ingredient.findMany({
       orderBy: { name: 'asc' },
       include: {
-        menuItemIngredients: {
-          include: { menuItem: true },
-        },
+        menuItemIngredients: { include: { menuItem: true } },
+        supplier: true,
       },
     })
     return NextResponse.json(ingredients)
@@ -27,6 +26,8 @@ export async function POST(req: NextRequest) {
         unit: body.unit,
         quantity: parseFloat(body.quantity) || 0,
         alertLevel: parseFloat(body.alertLevel) || 5,
+        costPerUnit: parseFloat(body.costPerUnit) || 0,
+        supplierId: body.supplierId ? parseInt(body.supplierId) : null,
       },
     })
     return NextResponse.json(ingredient)

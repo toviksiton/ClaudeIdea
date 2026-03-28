@@ -16,6 +16,7 @@ export async function PUT(req: NextRequest, { params }: { params: { id: string }
         category: body.category,
         isActive: body.isActive,
         sortOrder: body.sortOrder,
+        prepTimeMinutes: body.prepTimeMinutes ?? 0,
       },
     })
 

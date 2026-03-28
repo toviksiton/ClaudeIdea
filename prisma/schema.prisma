@@ -11,28 +11,33 @@ datasource db {
 model Ingredient {
   id          Int      @id @default(autoincrement())
   name        String
-  unit        String   // יחידת מדידה: יח', גרם, מ"ל וכו'
-  quantity    Float    @default(0) // כמות במלאי
-  alertLevel  Float    @default(5) // התראה כשהמלאי נמוך מרמה זו
+  unit        String
+  quantity    Float    @default(0)
+  alertLevel  Float    @default(5)
+  costPerUnit Float    @default(0) // עלות ליחידה (₪)
+  supplierId  Int?
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
 
   menuItemIngredients MenuItemIngredient[]
+  supplier            Supplier?  @relation(fields: [supplierId], references: [id])
+  purchases           Purchase[]
 }
 
 // פריטי תפריט
 model MenuItem {
-  id          Int      @id @default(autoincrement())
-  name        String
-  description String?
-  price       Float
-  imageUrl    String?
-  category    String   @default("כללי")
-  isActive    Boolean  @default(true)  // האם מופיע בתפריט
-  isAvailable Boolean  @default(true)  // האם זמין (מלאי)
-  sortOrder   Int      @default(0)
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
+  id               Int      @id @default(autoincrement())
+  name             String
+  description      String?
+  price            Float
+  imageUrl         String?
+  category         String   @default("כללי")
+  isActive         Boolean  @default(true)
+  isAvailable      Boolean  @default(true)
+  sortOrder        Int      @default(0)
+  prepTimeMinutes  Int      @default(0) // זמן הכנה בדקות
+  createdAt        DateTime @default(now())
+  updatedAt        DateTime @updatedAt
 
   ingredients MenuItemIngredient[]
   orderItems  OrderItem[]
@@ -43,7 +48,7 @@ model MenuItemIngredient {
   id           Int    @id @default(autoincrement())
   menuItemId   Int
   ingredientId Int
-  quantity     Float  // כמות הנדרשת לפריט אחד
+  quantity     Float
 
   menuItem   MenuItem   @relation(fields: [menuItemId], references: [id], onDelete: Cascade)
   ingredient Ingredient @relation(fields: [ingredientId], references: [id], onDelete: Cascade)
@@ -52,9 +57,6 @@ model MenuItemIngredient {
 }
 
 // הזמנות
-// status: PENDING | CONFIRMED | PREPARING | READY | COMPLETED | CANCELLED
-// paymentMethod: PAYBOX | BIT | CASH
-// paymentStatus: PENDING | PAID | FAILED | REFUNDED
 model Order {
   id            Int      @id @default(autoincrement())
   customerName  String
@@ -63,7 +65,7 @@ model Order {
   status        String   @default("PENDING")
   paymentMethod String
   paymentStatus String   @default("PENDING")
-  paymentRef    String?  // מזהה עסקה מ-Paybox/Bit
+  paymentRef    String?
   totalAmount   Float
   createdAt     DateTime @default(now())
   updatedAt     DateTime @updatedAt
@@ -82,6 +84,50 @@ model OrderItem {
 
   order    Order    @relation(fields: [orderId], references: [id], onDelete: Cascade)
   menuItem MenuItem @relation(fields: [menuItemId], references: [id])
+}
+
+// ספקים
+model Supplier {
+  id        Int      @id @default(autoincrement())
+  name      String
+  phone     String?
+  email     String?
+  notes     String?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  ingredients Ingredient[]
+  purchases   Purchase[]
+}
+
+// קניות מספקים (מעדכן מלאי + עלות)
+model Purchase {
+  id           Int      @id @default(autoincrement())
+  supplierId   Int?
+  ingredientId Int?
+  description  String
+  quantity     Float    @default(0)
+  costPerUnit  Float    @default(0) // עלות ששולמה ליחידה
+  totalAmount  Float
+  date         DateTime @default(now())
+  notes        String?
+  vatIncluded  Boolean  @default(true) // האם כולל מע"מ
+  createdAt    DateTime @default(now())
+
+  supplier   Supplier?   @relation(fields: [supplierId], references: [id])
+  ingredient Ingredient? @relation(fields: [ingredientId], references: [id])
+}
+
+// הוצאות כלליות
+model Expense {
+  id          Int      @id @default(autoincrement())
+  category    String   // ציוד, שכר, שיווק, אחר...
+  description String
+  amount      Float
+  vatAmount   Float    @default(0) // מע"מ בתוך הסכום
+  date        DateTime @default(now())
+  notes       String?
+  createdAt   DateTime @default(now())
 }
 
 // הגדרות מערכת

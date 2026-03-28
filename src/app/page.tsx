@@ -94,9 +94,14 @@ export default function CustomerPage() {
       .catch(() => {})
     setLoading(false)
 
-    // רענון תפריט כל 30 שניות
-    const interval = setInterval(fetchMenu, 30000)
-    return () => clearInterval(interval)
+    // רענון תפריט כל 15 שניות
+    const interval = setInterval(fetchMenu, 15000)
+
+    // רענון מיידי כשהמשתמש חוזר לטאב
+    const onVisible = () => { if (document.visibilityState === 'visible') fetchMenu() }
+    document.addEventListener('visibilitychange', onVisible)
+
+    return () => { clearInterval(interval); document.removeEventListener('visibilitychange', onVisible) }
   }, [fetchMenu])
 
   const filteredItems =

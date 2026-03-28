@@ -1,4 +1,5 @@
 import { prisma } from './prisma'
+import { calcIngredientCost, calcLaborCost } from './costing'
 
 /**
  * מחשב כמה פריטים ניתן להכין לפי המלאי הקיים
@@ -155,10 +156,15 @@ export async function getMenuWithStock() {
         if (possible < maxQty) maxQty = possible
       }
     }
+    const ingredientCost = calcIngredientCost(item.ingredients)
+    const laborCost = calcLaborCost(item.prepTimeMinutes)
     return {
       ...item,
       maxQuantity: maxQty,
       isAvailable: item.isAvailable && maxQty > 0,
+      ingredientCost,
+      laborCost,
+      totalCost: ingredientCost + laborCost,
     }
   })
 }

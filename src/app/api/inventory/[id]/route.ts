@@ -14,6 +14,8 @@ export async function PUT(req: NextRequest, { params }: { params: { id: string }
         unit: body.unit,
         quantity: parseFloat(body.quantity),
         alertLevel: parseFloat(body.alertLevel),
+        costPerUnit: parseFloat(body.costPerUnit) || 0,
+        supplierId: body.supplierId ? parseInt(body.supplierId) : null,
       },
     })
 

@@ -23,7 +23,7 @@ export async function GET() {
 export async function POST(req: NextRequest) {
   try {
     const body = await req.json()
-    const { name, description, price, category, isActive, sortOrder, ingredients } = body
+    const { name, description, price, category, isActive, sortOrder, prepTimeMinutes, ingredients } = body
 
     const item = await prisma.menuItem.create({
       data: {
@@ -34,6 +34,7 @@ export async function POST(req: NextRequest) {
         isActive: isActive ?? true,
         isAvailable: true,
         sortOrder: sortOrder ?? 0,
+        prepTimeMinutes: parseInt(prepTimeMinutes) || 0,
         ingredients: {
           create: (ingredients || []).map((ing: { ingredientId: number; quantity: number }) => ({
             ingredientId: ing.ingredientId,
