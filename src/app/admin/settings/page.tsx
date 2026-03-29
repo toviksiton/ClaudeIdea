@@ -6,12 +6,17 @@ import { Save, Upload, X } from 'lucide-react'
 export default function SettingsPage() {
   const [settings, setSettings] = useState({
     business_name: '',
+    business_tagline: '',
     business_phone: '',
     paybox_link: '',
     bit_phone: '',
     admin_password: '',
     event_active: 'true',
     logo_url: '',
+    instagram_url: '',
+    facebook_url: '',
+    tiktok_url: '',
+    whatsapp_display: '',
   })
   const fileRef = useRef<HTMLInputElement>(null)
   const [loading, setLoading] = useState(true)
@@ -112,6 +117,15 @@ export default function SettingsPage() {
           />
         </div>
         <div>
+          <label className="block text-sm font-medium text-gray-700 mb-1">סלוגן / תיאור קצר</label>
+          <input
+            value={settings.business_tagline}
+            onChange={(e) => setSettings({ ...settings, business_tagline: e.target.value })}
+            placeholder="מטבח ביתי אותנטי עם טעמי הכפר"
+            className="w-full border border-gray-200 rounded-xl px-3 py-2.5 focus:outline-none focus:ring-2 focus:ring-orange-300"
+          />
+        </div>
+        <div>
           <label className="block text-sm font-medium text-gray-700 mb-1">טלפון עסק</label>
           <input
             value={settings.business_phone}
@@ -168,6 +182,51 @@ export default function SettingsPage() {
               }`}
             />
           </button>
+        </div>
+
+        {/* Social Links */}
+        <div className="border-t border-gray-100 pt-4">
+          <p className="text-sm font-semibold text-gray-700 mb-3">קישורים לרשתות חברתיות</p>
+          <div className="space-y-3">
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">📸 Instagram</label>
+              <input
+                value={settings.instagram_url}
+                onChange={(e) => setSettings({ ...settings, instagram_url: e.target.value })}
+                placeholder="https://instagram.com/yourpage"
+                className="w-full border border-gray-200 rounded-xl px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-orange-300"
+              />
+            </div>
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">👤 Facebook</label>
+              <input
+                value={settings.facebook_url}
+                onChange={(e) => setSettings({ ...settings, facebook_url: e.target.value })}
+                placeholder="https://facebook.com/yourpage"
+                className="w-full border border-gray-200 rounded-xl px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-orange-300"
+              />
+            </div>
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">🎵 TikTok</label>
+              <input
+                value={settings.tiktok_url}
+                onChange={(e) => setSettings({ ...settings, tiktok_url: e.target.value })}
+                placeholder="https://tiktok.com/@yourpage"
+                className="w-full border border-gray-200 rounded-xl px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-orange-300"
+              />
+            </div>
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">💬 WhatsApp (מספר טלפון)</label>
+              <input
+                value={settings.whatsapp_display}
+                onChange={(e) => setSettings({ ...settings, whatsapp_display: e.target.value })}
+                placeholder="050-0000000"
+                type="tel"
+                className="w-full border border-gray-200 rounded-xl px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-orange-300"
+              />
+              <p className="text-xs text-gray-400 mt-1">יוצג כפתור WhatsApp בדף הראשי</p>
+            </div>
+          </div>
         </div>
 
         <button
