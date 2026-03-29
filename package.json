@@ -4,7 +4,7 @@
   "private": true,
   "scripts": {
     "dev": "next dev",
-    "build": "prisma generate && prisma db push && next build",
+    "build": "[ -f .env ] || echo 'DATABASE_URL=\"file:./dev.db\"' > .env && prisma generate && prisma db push && next build",
     "start": "next start",
     "db:push": "prisma db push",
     "db:studio": "prisma studio",
